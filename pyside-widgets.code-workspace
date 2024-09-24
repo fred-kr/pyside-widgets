@@ -1,0 +1,62 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.autoSave": "afterDelay",
+		"python.analysis.typeCheckingMode": "strict",
+		"python.analysis.diagnosticSeverityOverrides": {
+			"reportMissingTypeStubs": "none",
+			"reportUnknownMemberType": "none",
+		},
+		"files.exclude": {
+			"**/dist": true,
+			"**/build": true,
+			"**/output": true,
+			"**/pickles": true,
+			"**/.idea": true,
+		},
+		"python.analysis.exclude": [
+			"**/__pycache__",
+			".git",
+			".venv",
+			"**/tests/**",
+			".mypy_cache/**",
+			".pytest_cache/**",
+			".ruff_cache/**",
+			"**/dist/**",
+			"**/build/**",
+			"**/output/**",
+			"**/.idea/**",
+			"**/ui_*.py",
+		],
+		"python.analysis.ignore": [
+			"**/ui_*.py",
+		],
+		"ruff.format.args": [
+			"--config=${workspaceFolder}/pyproject.toml"
+		],
+		"ruff.lint.args": [
+			"--config=${workspaceFolder}/pyproject.toml"
+		],
+		"workbench.colorCustomizations": {
+			"activityBar.activeBackground": "#4933a4",
+			"activityBar.background": "#4933a4",
+			"activityBar.foreground": "#e7e7e7",
+			"activityBar.inactiveForeground": "#e7e7e799",
+			"activityBarBadge.background": "#c3573c",
+			"activityBarBadge.foreground": "#e7e7e7",
+			"commandCenter.border": "#e7e7e799",
+			"editorGroup.border": "#4933a4",
+			"sash.hoverBorder": "#4933a4",
+			"tab.activeBorder": "#4933a4",
+			"titleBar.activeBackground": "#38277d",
+			"titleBar.activeForeground": "#e7e7e7",
+			"titleBar.inactiveBackground": "#38277d99",
+			"titleBar.inactiveForeground": "#e7e7e799"
+		},
+		"peacock.color": "#38277d"
+	}
+}
