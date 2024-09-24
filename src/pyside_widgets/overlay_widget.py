@@ -1,4 +1,4 @@
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 
 class OverlayWidget(QtWidgets.QWidget):
@@ -8,17 +8,22 @@ class OverlayWidget(QtWidgets.QWidget):
         self._target = parent
 
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
-        self.setStyleSheet("background: rgba(0, 0, 0, 128);")
+        self.setStyleSheet("background-color: rgba(0, 0, 0, 128);")
 
         self._content = QtWidgets.QWidget()
         self._content.setStyleSheet("background: rgba(0, 0, 0, 0);")
 
+        font = self._content.font()
+        font.setPointSize(28)
+        font.setWeight(QtGui.QFont.Weight.DemiBold)
+
         self._text = QtWidgets.QLabel("Running...")
-        self._text.setStyleSheet("background: rgba(0, 0, 0, 0);")
+        self._text.setStyleSheet("background: transparent; color: white;")
+        self._text.setFont(font)
         self._text.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
 
         self._spinner = QtWidgets.QProgressBar()
-        self._spinner.setVisible(False)
+        self._spinner.setRange(0, 0)
 
         self._layout_content = QtWidgets.QVBoxLayout()
         self._layout_content.setContentsMargins(0, 0, 0, 0)
@@ -26,13 +31,13 @@ class OverlayWidget(QtWidgets.QWidget):
 
         self._layout_content.addWidget(
             self._text,
-            alignment=QtCore.Qt.AlignmentFlag.AlignHCenter
-            | QtCore.Qt.AlignmentFlag.AlignTop,
+            0,
+            QtCore.Qt.AlignmentFlag.AlignHCenter | QtCore.Qt.AlignmentFlag.AlignTop,
         )
         self._layout_content.addWidget(
             self._spinner,
-            alignment=QtCore.Qt.AlignmentFlag.AlignHCenter
-            | QtCore.Qt.AlignmentFlag.AlignVCenter,
+            0,
+            QtCore.Qt.AlignmentFlag.AlignHCenter | QtCore.Qt.AlignmentFlag.AlignVCenter,
         )
 
         self._content.setLayout(self._layout_content)
@@ -43,8 +48,8 @@ class OverlayWidget(QtWidgets.QWidget):
 
         self._layout.addWidget(
             self._content,
-            alignment=QtCore.Qt.AlignmentFlag.AlignHCenter
-            | QtCore.Qt.AlignmentFlag.AlignVCenter,
+            0,
+            QtCore.Qt.AlignmentFlag.AlignHCenter | QtCore.Qt.AlignmentFlag.AlignVCenter,
         )
 
         self.setLayout(self._layout)
