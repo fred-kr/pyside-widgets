@@ -16,8 +16,8 @@ class IndeterminateSpinner(QtWidgets.QProgressBar):
         self._bar_color = QtGui.QColor()
         self._stroke_width = 6
 
-        self._start_angle = -180
-        self._span_angle = 0
+        self._startAngle = -180
+        self._spanAngle = 0
 
         self.start_angle_ani1 = QtCore.QPropertyAnimation(self, b"startAngle", self)
         self.start_angle_ani2 = QtCore.QPropertyAnimation(self, b"startAngle", self)
@@ -61,42 +61,40 @@ class IndeterminateSpinner(QtWidgets.QProgressBar):
         if start:
             self.start()
 
-    @property
-    def start_angle(self) -> int:
-        return self._start_angle
+    @QtCore.Property(int)
+    def startAngle(self) -> int:
+        return self._startAngle
 
-    @start_angle.setter
-    def start_angle(self, angle: int) -> None:
-        self._start_angle = angle
+    @startAngle.setter
+    def startAngle(self, angle: int) -> None:
+        self._startAngle = angle
         self.update()
 
-    @property
-    def span_angle(self) -> int:
-        return self._span_angle
+    @QtCore.Property(int)
+    def spanAngle(self) -> int:
+        return self._spanAngle
 
-    @span_angle.setter
-    def span_angle(self, angle: int) -> None:
-        self._span_angle = angle
+    @spanAngle.setter
+    def spanAngle(self, angle: int) -> None:
+        self._spanAngle = angle
         self.update()
 
-    @property
-    def stroke_width(self) -> int:
+    def get_stroke_width(self) -> int:
         return self._stroke_width
 
-    @stroke_width.setter
-    def stroke_width(self, width: int) -> None:
+    def set_stroke_width(self, width: int) -> None:
         self._stroke_width = width
         self.update()
 
     def start(self) -> None:
-        self._start_angle = 0
-        self._span_angle = 0
+        self._startAngle = 0
+        self._spanAngle = 0
         self.ani_group.start()
 
     def stop(self) -> None:
         self.ani_group.stop()
-        self._start_angle = 0
-        self._span_angle = 0
+        self._startAngle = 0
+        self._spanAngle = 0
 
     def set_bg_color(self, color: QtGui.QColor) -> None:
         self._bg_color = color
@@ -130,8 +128,10 @@ class IndeterminateSpinner(QtWidgets.QProgressBar):
         pen.setColor(self._bar_color)
         painter.setPen(pen)
 
-        start_angle = -self.start_angle + 180
-        painter.drawArc(rc, (start_angle % 360) * 16, -self.span_angle * 16)
+        start_angle = -self.startAngle + 180
+        painter.drawArc(rc, (start_angle % 360) * 16, -self.spanAngle * 16)
+
+    stroke_width = QtCore.Property(int, get_stroke_width, set_stroke_width)
 
 
 class OverlayWidget(QtWidgets.QWidget):
