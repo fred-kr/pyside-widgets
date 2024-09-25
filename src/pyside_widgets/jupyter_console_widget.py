@@ -36,7 +36,7 @@ class JupyterConsoleWidget(inprocess.QtInProcessRichJupyterWidget):
 
 
 class JupyterConsoleWindow(QtWidgets.QWidget):
-    def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
+    def __init__(self, style: t.Literal["lightbg", "linux", "nocolor"] = "linux", parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
 
         self.toggle_view_action = QtGui.QAction("Toggle Jupyter Console", self)
@@ -46,7 +46,7 @@ class JupyterConsoleWindow(QtWidgets.QWidget):
         self.toggle_view_action.setCheckable(True)
         self.toggle_view_action.toggled.connect(self.setVisible)
 
-        self.console = JupyterConsoleWidget()
+        self.console = JupyterConsoleWidget(style=style)
         layout = QtWidgets.QVBoxLayout()
 
         layout.addWidget(self.console)
