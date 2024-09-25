@@ -96,12 +96,18 @@ class IndeterminateSpinner(QtWidgets.QProgressBar):
         self._startAngle = 0
         self._spanAngle = 0
 
-    def set_bg_color(self, color: QtGui.QColor) -> None:
-        self._bg_color = color
+    def set_bg_color(self, color: QtGui.QColor | str) -> None:
+        bg_color = QtGui.QColor(color)
+        if not bg_color.isValid():
+            return
+        self._bg_color = bg_color
         self.update()
 
-    def set_bar_color(self, color: QtGui.QColor) -> None:
-        self._bar_color = color
+    def set_bar_color(self, color: QtGui.QColor | str) -> None:
+        bar_color = QtGui.QColor(color)
+        if not bar_color.isValid():
+            return
+        self._bar_color = bar_color
         self.update()
 
     def paintEvent(self, arg__1: QtGui.QPaintEvent) -> None:
@@ -137,30 +143,32 @@ class IndeterminateSpinner(QtWidgets.QProgressBar):
 class OverlayWidget(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget) -> None:
         super().__init__(parent)
-
         self._target = parent
 
-        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
-        self.setStyleSheet("background-color: rgba(0, 0, 0, 128);")
+        self._container = QtWidgets.QWidget(self)
+        self._container.setStyleSheet("background: rgba(0, 0, 0, 128);")
 
-        self._content = QtWidgets.QWidget()
+        self._layout = QtWidgets.QVBoxLayout(self._container)
+        self._layout.setContentsMargins(0, 0, 0, 0)
+        self._layout.setSpacing(0)
+
+        self._content = QtWidgets.QWidget(self._container)
         self._content.setStyleSheet("background: rgba(0, 0, 0, 0);")
 
-        font = self._content.font()
+        self._layout_content = QtWidgets.QVBoxLayout(self._content)
+        self._layout_content.setSpacing(12)
+
+        font = self.parentWidget().font()
         font.setPointSize(28)
         font.setWeight(QtGui.QFont.Weight.DemiBold)
 
-        self._text = QtWidgets.QLabel("Running...")
-        self._text.setStyleSheet("background: transparent; color: white;")
+        self._text = QtWidgets.QLabel(self._content)
         self._text.setFont(font)
+        self._text.setStyleSheet("background: transparent; color: white;")
         self._text.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
 
-        self._spinner = IndeterminateSpinner()
-        self._spinner.set_bar_color(QtGui.QColor("#6495ed"))
-
-        self._layout_content = QtWidgets.QVBoxLayout()
-        self._layout_content.setContentsMargins(0, 0, 0, 0)
-        self._layout_content.setSpacing(12)
+        self._spinner = IndeterminateSpinner(self._content)
+        self._spinner.set_bar_color("cornflowerblue")
 
         self._layout_content.addWidget(
             self._text,
@@ -173,22 +181,20 @@ class OverlayWidget(QtWidgets.QWidget):
             QtCore.Qt.AlignmentFlag.AlignHCenter | QtCore.Qt.AlignmentFlag.AlignVCenter,
         )
 
-        self._content.setLayout(self._layout_content)
-
-        self._layout = QtWidgets.QVBoxLayout()
-        self._layout.setContentsMargins(0, 0, 0, 0)
-        self._layout.setSpacing(0)
-
         self._layout.addWidget(
             self._content,
             0,
             QtCore.Qt.AlignmentFlag.AlignHCenter | QtCore.Qt.AlignmentFlag.AlignVCenter,
         )
 
-        self.setLayout(self._layout)
+    def set_background_color(self, r: int, g: int, b: int, a: int = 128) -> None:
+        self._container.setStyleSheet(f"background: rgba({r}, {g}, {b}, {a});")
 
     def set_text(self, text: str) -> None:
         self._text.setText(text)
+
+    def set_spinner_color(self, color: QtGui.QColor | str) -> None:
+        self._spinner.set_bar_color(color)
 
     def show_overlay(self, text: str | None = None) -> None:
         self._target.setEnabled(False)
@@ -197,6 +203,8 @@ class OverlayWidget(QtWidgets.QWidget):
             self._text.setText(text)
 
         self.setGeometry(self._target.geometry())
+        self._container.move(0, 0)
+        self._container.resize(self._target.size())
         self.move(0, 0)
         self.raise_()
         self.show()
