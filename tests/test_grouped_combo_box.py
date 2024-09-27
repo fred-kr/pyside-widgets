@@ -1,26 +1,16 @@
-import sys
-
 import pytest
 from PySide6 import QtCore, QtWidgets
 
 from pyside_widgets.grouped_combo_box import GroupedComboBox, ItemType, ItemTypeRole
 
 
-@pytest.fixture(scope="module")
-def app():
-    """Create a QApplication instance for the test suite."""
-    app = QtWidgets.QApplication.instance()
-    if app is None:
-        app = QtWidgets.QApplication(sys.argv)
-    yield app
-    if not QtWidgets.QApplication.instance():
-        app.quit()
-
-
 @pytest.fixture
-def combo_box(app):
+def combo_box(qtbot) -> GroupedComboBox:
     """Provide a fresh GroupedComboBox instance for each test."""
-    return GroupedComboBox()
+    grouped_combo_box = GroupedComboBox()
+    qtbot.addWidget(grouped_combo_box)
+
+    return grouped_combo_box
 
 
 def test_add_separator(combo_box: GroupedComboBox):

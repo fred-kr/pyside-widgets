@@ -1,26 +1,15 @@
-import sys
-
 import pytest
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from pyside_widgets.overlay_widget import IndeterminateSpinner, OverlayWidget
 
 
-@pytest.fixture(scope="module")
-def app():
-    """Create a QApplication instance for the test module."""
-    app = QtWidgets.QApplication.instance()
-    if app is None:
-        app = QtWidgets.QApplication(sys.argv)
-    yield app
-    if not QtWidgets.QApplication.instance():
-        app.quit()
-
-
 @pytest.fixture
-def parent_widget(app):
+def parent_widget(qtbot) -> QtWidgets.QWidget:
     """Provide a parent widget for testing."""
-    return QtWidgets.QWidget()
+    widget = QtWidgets.QWidget()
+    qtbot.addWidget(widget)
+    return widget
 
 
 @pytest.fixture
