@@ -7,9 +7,7 @@ class IndeterminateSpinner(QtWidgets.QProgressBar):
     [`qfluentwidgets.IndeterminateProgressRing`](https://pyqt-fluent-widgets.readthedocs.io/en/latest/autoapi/qfluentwidgets/components/widgets/progress_ring/index.html#qfluentwidgets.components.widgets.progress_ring.IndeterminateProgressRing).
     """
 
-    def __init__(
-        self, parent: QtWidgets.QWidget | None = None, start: bool = True
-    ) -> None:
+    def __init__(self, parent: QtWidgets.QWidget | None = None, start: bool = True) -> None:
         super().__init__(parent)
 
         self._bg_color = QtGui.QColor(0, 0, 0, 0)

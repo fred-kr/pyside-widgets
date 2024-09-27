@@ -82,11 +82,7 @@ class GroupedComboBoxDelegate(QtWidgets.QStyledItemDelegate):
         item_type = index.data(ItemTypeRole)
         if item_type == ItemType.SEPARATOR:
             y = (option.rect.top() + option.rect.bottom()) // 2
-            painter.setPen(
-                option.palette.color(
-                    QtGui.QPalette.ColorGroup.Active, QtGui.QPalette.ColorRole.Dark
-                )
-            )
+            painter.setPen(option.palette.color(QtGui.QPalette.ColorGroup.Active, QtGui.QPalette.ColorRole.Dark))
             painter.drawLine(option.rect.left(), y, option.rect.right(), y)
         elif item_type == ItemType.PARENT:
             painter.save()

@@ -8,20 +8,14 @@ if t.TYPE_CHECKING:
 
 
 class JupyterConsoleWidget(inprocess.QtInProcessRichJupyterWidget):
-    def __init__(
-        self, style: t.Literal["lightbg", "linux", "nocolor"] = "linux"
-    ) -> None:
+    def __init__(self, style: t.Literal["lightbg", "linux", "nocolor"] = "linux") -> None:
         super().__init__()
         self.set_default_style(style)
 
-        self.kernel_manager: inprocess.QtInProcessKernelManager = (
-            inprocess.QtInProcessKernelManager()
-        )
+        self.kernel_manager: inprocess.QtInProcessKernelManager = inprocess.QtInProcessKernelManager()
         self.kernel_manager.start_kernel()
 
-        self.kernel_client: jupyter_client.blocking.client.BlockingKernelClient = (
-            self.kernel_manager.client()
-        )
+        self.kernel_client: jupyter_client.blocking.client.BlockingKernelClient = self.kernel_manager.client()
 
         self.kernel_client.start_channels()
 
@@ -36,13 +30,13 @@ class JupyterConsoleWidget(inprocess.QtInProcessRichJupyterWidget):
 
 
 class JupyterConsoleWindow(QtWidgets.QWidget):
-    def __init__(self, style: t.Literal["lightbg", "linux", "nocolor"] = "linux", parent: QtWidgets.QWidget | None = None) -> None:
+    def __init__(
+        self, style: t.Literal["lightbg", "linux", "nocolor"] = "linux", parent: QtWidgets.QWidget | None = None
+    ) -> None:
         super().__init__(parent)
 
         self.toggle_view_action = QtGui.QAction("Toggle Jupyter Console", self)
-        self.toggle_view_action.setIcon(
-            QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.Computer)
-        )
+        self.toggle_view_action.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.Computer))
         self.toggle_view_action.setCheckable(True)
         self.toggle_view_action.toggled.connect(self.setVisible)
 
