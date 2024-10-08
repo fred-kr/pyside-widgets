@@ -7,6 +7,9 @@ import numpy.typing as npt
 import pyqtgraph as pg
 from PySide6 import QtCore, QtGui, QtWidgets
 
+ItemDataRole = QtCore.Qt.ItemDataRole
+type ModelIndex = QtCore.QModelIndex | QtCore.QPersistentModelIndex
+
 
 class DataTreeWidget(QtWidgets.QTreeWidget):
     """
@@ -55,18 +58,19 @@ class DataTreeWidget(QtWidgets.QTreeWidget):
         """
         Recursively build the tree from the given data.
 
-        Parameters
-        ----------
-        data : dict[str, t.Any]
-            A dictionary containing the data to be displayed.
-        parent : QtWidgets.QTreeWidgetItem
-            The parent item under which the data will be displayed.
-        name : str, optional
-            The name to be displayed for the current node, by default ""
-        hide_root : bool, optional
-            Whether to hide the root node, by default False
-        path : tuple[str  |  int, ...], optional
-            A tuple containing the path to the current node, by default ()
+        :param data: A dictionary containing the data to be displayed.
+        :type data: dict[str, t.Any]
+        :param parent: The parent item under which the data will be displayed.
+        :type parent: QtWidgets.QTreeWidgetItem
+        :param name: The name to be displayed for the current node, defaults to "".
+        :type name: str, optional
+        :param hide_root: Whether to hide the root node, defaults to False.
+        :type hide_root: bool, optional
+        :param path: A tuple containing the path to the current node, defaults to ().
+        :type path: tuple[str | int, ...], optional
+
+        :return: None
+        :rtype: None
         """
         if hide_root:
             node = parent
@@ -79,7 +83,7 @@ class DataTreeWidget(QtWidgets.QTreeWidget):
         type_str, desc, childs, widget = self.parse_data(data)
 
         node.setText(1, type_str)
-        node.setData(2, QtCore.Qt.ItemDataRole.UserRole, data)
+        node.setData(2, ItemDataRole.UserRole, data)
 
         if len(desc) > 100:
             desc = f"{desc[:97]}..."
@@ -102,17 +106,12 @@ class DataTreeWidget(QtWidgets.QTreeWidget):
 
     def parse_data(self, data: t.Any) -> tuple[str, str, dict[int, t.Any], QtWidgets.QWidget | None]:
         """
-        Parse the given data and return information for displaying it in the tree.
+        Parse the given data and return the type, description, child items, and widget to be displayed.
 
-        Parameters
-        ----------
-        data : t.Any
-            The data to be parsed.
-
-        Returns
-        -------
-        tuple[str, str, t.OrderedDict[int, t.Any], QtWidgets.QWidget | None]
-            The type of the data, its description, its children, and the widget to use for displaying it.
+        :param data: The data to be parsed.
+        :type data: Any
+        :return: A tuple containing the type, description, child items, and widget to be displayed.
+        :rtype: tuple[str, str, dict[int, t.Any], QtWidgets.QWidget | None]
         """
         type_str = type(data).__name__
         if type_str == "instance":
@@ -122,17 +121,17 @@ class DataTreeWidget(QtWidgets.QTreeWidget):
         childs: dict[int, t.Any] = {}
 
         if isinstance(data, dict):
-            desc = f"length={len(data)}"
-            childs = dict(data.items())
+            desc = f"length={len(data)}"  # type: ignore
+            childs = dict(data.items())  # type: ignore
         elif isinstance(data, (list, tuple)):
-            desc = f"length={len(data)}"
-            childs = dict(enumerate(data))
+            desc = f"length={len(data)}"  # type: ignore
+            childs = dict(enumerate(data))  # type: ignore
         elif isinstance(data, np.ndarray):
             desc = f"shape={data.shape} dtype={data.dtype}"
             if data.size > 1000:
                 summary = f"min={data.min()}, max={data.max()}, mean={data.mean():.2f}"
                 widget = QtWidgets.QPushButton(f"Array summary: {summary}")
-                widget.clicked.connect(lambda: self.show_full_array(data))
+                widget.clicked.connect(lambda: self.show_full_array(data))  # type: ignore
             else:
                 table = pg.TableWidget()
                 table.setData(data)
@@ -150,6 +149,12 @@ class DataTreeWidget(QtWidgets.QTreeWidget):
         return type_str, desc, childs, widget
 
     def filter_tree(self, text: str) -> None:
+        """
+        Search the tree for items containing the given text and hide/show them accordingly.
+
+        :param text: The text to search for.
+        :type text: str
+        """
         for item in self._nodes.values():
             item.setHidden(text not in item.text(0))
 
@@ -181,9 +186,15 @@ class DataTreeWidget(QtWidgets.QTreeWidget):
         menu.exec(self.mapToGlobal(pos))
 
     def edit_item_value(self, item: QtWidgets.QTreeWidgetItem) -> None:
+        """
+        Edit the value of the given item.
+
+        :param item: The item to edit.
+        :type item: QtWidgets.QTreeWidgetItem
+        """
         if not self._allow_edit:
             return
-        data = item.data(2, QtCore.Qt.ItemDataRole.UserRole)
+        data = item.data(2, ItemDataRole.UserRole)
         if isinstance(data, (int, float, str, bool)):
             new_value, ok = QtWidgets.QInputDialog.getText(
                 self,
@@ -198,7 +209,7 @@ class DataTreeWidget(QtWidgets.QTreeWidget):
                     else:
                         new_data = type(data)(new_value)
 
-                    item.setData(2, QtCore.Qt.ItemDataRole.UserRole, new_data)
+                    item.setData(2, ItemDataRole.UserRole, new_data)
                     item.setText(2, str(new_data))
                 except ValueError:
                     QtWidgets.QMessageBox.warning(self, "Invalid Input", "Could not convert input to correct type")

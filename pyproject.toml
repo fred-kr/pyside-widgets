@@ -5,9 +5,10 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "numpy<2.1",
+    "numpy<2.1.2",
     "pyqtgraph",
-    "pyside6>=6.7.2",
+    "pyside6>=6.7.3",
+    "pytest-qt>=4.4.0",
     "qtconsole>=5.6.0",
 ]
 
@@ -15,7 +16,8 @@ dependencies = [
 dev-dependencies = [
     "pytest-qt>=4.4.0",
     "pytest>=8.3.3",
-    "ruff>=0.6.8",
+    "rich>=13.9.2",
+    "ruff>=0.6.9",
 ]
 
 [tool.uv.sources]

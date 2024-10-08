@@ -186,15 +186,45 @@ class OverlayWidget(QtWidgets.QWidget):
         )
 
     def set_background_color(self, r: int, g: int, b: int, a: int = 128) -> None:
+        """
+        Set the background color of the container widget to the provided rgba values
+
+        :param r: red (0-255)
+        :type r: int
+        :param g: green (0-255)
+        :type g: int
+        :param b: blue (0-255)
+        :type b: int
+        :param a: alpha (0-255), defaults to 128
+        :type a: int, optional
+        """
         self._container.setStyleSheet(f"background: rgba({r}, {g}, {b}, {a});")
 
     def set_text(self, text: str) -> None:
+        """
+        Set the text of the label
+
+        :param text: The text to display
+        :type text: str
+        """
         self._text.setText(text)
 
     def set_spinner_color(self, color: QtGui.QColor | str) -> None:
+        """
+        Set the color of the spinner
+
+        :param color: The color to use
+        :type color: QtGui.QColor | str
+        """
         self._spinner.set_bar_color(color)
 
     def show_overlay(self, text: str | None = None) -> None:
+        """
+        Disables the target widget, updates the label text if provided, and shows the overlay
+
+        :param text: The text to display, defaults to None
+        :type text: str | None, optional
+        """
         self._target.setEnabled(False)
 
         if text is not None:
@@ -208,5 +238,8 @@ class OverlayWidget(QtWidgets.QWidget):
         self.show()
 
     def hide_overlay(self) -> None:
+        """
+        Enables the target widget and hides the overlay
+        """
         self._target.setEnabled(True)
         self.hide()
