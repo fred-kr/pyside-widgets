@@ -5,10 +5,9 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "numpy<2.1.2",
-    "pyqtgraph",
+    "numpy>=2.1.2",
+    "pyqtgraph>=0.13.7",
     "pyside6>=6.7.3",
-    "pytest-qt>=4.4.0",
     "qtconsole>=5.6.0",
 ]
 
