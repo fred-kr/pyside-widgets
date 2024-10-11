@@ -37,7 +37,11 @@ class DataTreeWidget(QtWidgets.QTreeWidget):
 
     def set_data(self, data: dict[str, t.Any], hide_root: bool = False) -> None:
         """
-        Set the data to be displayed in the widget
+        Set the data to be displayed.
+
+        Args:
+            data (dict[str, Any]): The data to be displayed.
+            hide_root (bool, optional): Whether to hide the root node. Defaults to False.
         """
         self.clear()
 
@@ -58,19 +62,12 @@ class DataTreeWidget(QtWidgets.QTreeWidget):
         """
         Recursively build the tree from the given data.
 
-        :param data: A dictionary containing the data to be displayed.
-        :type data: dict[str, t.Any]
-        :param parent: The parent item under which the data will be displayed.
-        :type parent: QtWidgets.QTreeWidgetItem
-        :param name: The name to be displayed for the current node, defaults to "".
-        :type name: str, optional
-        :param hide_root: Whether to hide the root node, defaults to False.
-        :type hide_root: bool, optional
-        :param path: A tuple containing the path to the current node, defaults to ().
-        :type path: tuple[str | int, ...], optional
-
-        :return: None
-        :rtype: None
+        Args:
+            data (dict[str, Any]): A dictionary containing the data to be displayed.
+            parent (QtWidgets.QTreeWidgetItem): The parent item under which the data will be displayed.
+            name (str, optional): The name to be displayed for the current node. Defaults to "".
+            hide_root (bool, optional): Whether to hide the root node. Defaults to False.
+            path (tuple[str | int, ...], optional): A tuple containing the path to the current node. Defaults to ().
         """
         if hide_root:
             node = parent
@@ -106,12 +103,14 @@ class DataTreeWidget(QtWidgets.QTreeWidget):
 
     def parse_data(self, data: t.Any) -> tuple[str, str, dict[int, t.Any], QtWidgets.QWidget | None]:
         """
-        Parse the given data and return the type, description, child items, and widget to be displayed.
+        Parse the given data and return its type, description, children, and widget.
 
-        :param data: The data to be parsed.
-        :type data: Any
-        :return: A tuple containing the type, description, child items, and widget to be displayed.
-        :rtype: tuple[str, str, dict[int, Any], QtWidgets.QWidget | None]
+        Args:
+            data (Any): Data to be parsed.
+
+        Returns:
+            tuple ((str, str, dict[int, Any], QtWidgets.QWidget | None)): type string, description text, dictionary of
+            child data to recursively parse, widget to display the data if supported
         """
         type_str = type(data).__name__
         if type_str == "instance":
@@ -152,8 +151,8 @@ class DataTreeWidget(QtWidgets.QTreeWidget):
         """
         Search the tree for items containing the given text and hide/show them accordingly.
 
-        :param text: The text to search for.
-        :type text: str
+        Args:
+            text (str): The text to search for.
         """
         for item in self._nodes.values():
             item.setHidden(text not in item.text(0))
@@ -189,8 +188,8 @@ class DataTreeWidget(QtWidgets.QTreeWidget):
         """
         Edit the value of the given item.
 
-        :param item: The item to edit.
-        :type item: QtWidgets.QTreeWidgetItem
+        Args:
+            item (QtWidgets.QTreeWidgetItem): The item to edit.
         """
         if not self._allow_edit:
             return
