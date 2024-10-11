@@ -74,9 +74,9 @@ class SettingCard(QtWidgets.QFrame):
     def set_icon_size(self, size: int) -> None:
         self._icon_label.setFixedSize(size, size)
 
-    def add_widget(self, widget: QtWidgets.QWidget) -> None:
+    def set_editor_widget(self, widget: QtWidgets.QWidget) -> None:
         """
-        Add widget for editing the setting value to the card.
+        Sets the widget used for editing the card's setting value.
         """
         self.h_layout.addWidget(widget, 0, QtCore.Qt.AlignmentFlag.AlignRight)
         self.h_layout.addSpacing(16)
