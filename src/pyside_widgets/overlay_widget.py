@@ -3,8 +3,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 class IndeterminateSpinner(QtWidgets.QProgressBar):
     """
-    Indeterminate progress ring, based on
-    [`qfluentwidgets.IndeterminateProgressRing`](https://pyqt-fluent-widgets.readthedocs.io/en/latest/autoapi/qfluentwidgets/components/widgets/progress_ring/index.html#qfluentwidgets.components.widgets.progress_ring.IndeterminateProgressRing).
+    Indeterminate progress ring, based on `qfluentwidgets.IndeterminateProgressRing`.
     """
 
     def __init__(self, parent: QtWidgets.QWidget | None = None, start: bool = True) -> None:

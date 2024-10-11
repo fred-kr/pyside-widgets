@@ -111,7 +111,7 @@ class DataTreeWidget(QtWidgets.QTreeWidget):
         :param data: The data to be parsed.
         :type data: Any
         :return: A tuple containing the type, description, child items, and widget to be displayed.
-        :rtype: tuple[str, str, dict[int, t.Any], QtWidgets.QWidget | None]
+        :rtype: tuple[str, str, dict[int, Any], QtWidgets.QWidget | None]
         """
         type_str = type(data).__name__
         if type_str == "instance":
