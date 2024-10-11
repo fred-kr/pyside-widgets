@@ -56,7 +56,6 @@ class SettingCard(QtWidgets.QFrame):
         self.v_layout.addWidget(self._description_label, 0, QtCore.Qt.AlignmentFlag.AlignLeft)
 
         self.h_layout.addSpacing(16)
-        self.h_layout.addStretch(1)
 
         self.set_editor_widget(editor_widget)
 
@@ -81,7 +80,9 @@ class SettingCard(QtWidgets.QFrame):
         """
         Sets the widget used for editing the setting value associated with this card.
         """
-        self.h_layout.addWidget(widget, 1, QtCore.Qt.AlignmentFlag.AlignRight)
+        min_width = max(int(self.width() * 0.25), widget.minimumWidth())
+        widget.setMinimumWidth(min_width)
+        self.h_layout.addWidget(widget, 0, QtCore.Qt.AlignmentFlag.AlignRight)
         self.h_layout.addSpacing(16)
         self.editor_widget = widget
 
