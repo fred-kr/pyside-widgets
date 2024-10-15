@@ -1,3 +1,5 @@
+import typing as t
+
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from ._style_sheets import CARD_STYLE_SHEET
@@ -12,12 +14,15 @@ class SettingCard(QtWidgets.QFrame):
     entire `qfluentwidgets` package).
     """
 
+    sig_reset_clicked: t.ClassVar[QtCore.Signal] = QtCore.Signal()
+
     def __init__(
         self,
         title: str,
         editor_widget: QtWidgets.QWidget,
         description: str | None = None,
         icon: QtGui.QIcon | None = None,
+        show_reset_button: bool = True,
         parent: QtWidgets.QWidget | None = None,
     ) -> None:
         super().__init__(parent)
@@ -26,6 +31,11 @@ class SettingCard(QtWidgets.QFrame):
         self._description_label = QtWidgets.QLabel(description or "", self)
         self._icon_label = QtWidgets.QLabel(self)
         self.editor_widget = editor_widget
+
+        self.btn_reset = QtWidgets.QToolButton(self)
+        self.btn_reset.setText("Reset")
+        self.btn_reset.setToolButtonStyle(QtCore.Qt.ToolButtonStyle.ToolButtonTextOnly)
+        self.btn_reset.clicked.connect(self.emit_reset_clicked)
 
         self.h_layout = QtWidgets.QHBoxLayout(self)
         self.v_layout = QtWidgets.QVBoxLayout()
@@ -37,6 +47,9 @@ class SettingCard(QtWidgets.QFrame):
             self._icon_label.hide()
         else:
             self._icon_label.setPixmap(icon.pixmap(16, 16))
+
+        if not show_reset_button:
+            self.btn_reset.hide()
 
         self.setFixedHeight(70 if description else 50)
 
@@ -57,7 +70,13 @@ class SettingCard(QtWidgets.QFrame):
 
         self.h_layout.addSpacing(16)
 
-        self.set_editor_widget(editor_widget)
+        min_width = max(int(self.width() * 0.25), editor_widget.minimumWidth())
+        editor_widget.setMinimumWidth(min_width)
+        self.h_layout.addWidget(editor_widget, 0, QtCore.Qt.AlignmentFlag.AlignRight)
+        self.h_layout.addSpacing(8)
+
+        self.h_layout.addWidget(self.btn_reset)
+        self.h_layout.addSpacing(16)
 
         self._description_label.setObjectName("textLabel")
 
@@ -76,16 +95,6 @@ class SettingCard(QtWidgets.QFrame):
     def set_icon_size(self, size: int) -> None:
         self._icon_label.setFixedSize(size, size)
 
-    def set_editor_widget(self, widget: QtWidgets.QWidget) -> None:
-        """
-        Sets the widget used for editing the setting value associated with this card.
-        """
-        min_width = max(int(self.width() * 0.25), widget.minimumWidth())
-        widget.setMinimumWidth(min_width)
-        self.h_layout.addWidget(widget, 0, QtCore.Qt.AlignmentFlag.AlignRight)
-        self.h_layout.addSpacing(16)
-        self.editor_widget = widget
-
     def paintEvent(self, arg__1: QtGui.QPaintEvent) -> None:
         painter = QtGui.QPainter(self)
         painter.setRenderHints(QtGui.QPainter.RenderHint.Antialiasing)
@@ -98,3 +107,7 @@ class SettingCard(QtWidgets.QFrame):
             painter.setPen(QtGui.QColor(0, 0, 0, 19))
 
         painter.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), 6, 6)
+
+    @QtCore.Slot()
+    def emit_reset_clicked(self) -> None:
+        self.sig_reset_clicked.emit()
