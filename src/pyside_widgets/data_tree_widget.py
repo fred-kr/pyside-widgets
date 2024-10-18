@@ -19,7 +19,11 @@ class DataTreeWidget(QtWidgets.QTreeWidget):
     """
 
     def __init__(
-        self, parent: QtWidgets.QWidget | None = None, data: dict[str, t.Any] | None = None, allow_edit: bool = False
+        self,
+        parent: QtWidgets.QWidget | None = None,
+        data: dict[str, t.Any] | None = None,
+        allow_edit: bool = False,
+        hide_root: bool = True,
     ) -> None:
         super().__init__(parent)
         self.setVerticalScrollMode(self.ScrollMode.ScrollPerPixel)
@@ -33,15 +37,15 @@ class DataTreeWidget(QtWidgets.QTreeWidget):
         self.customContextMenuRequested.connect(self.show_context_menu)
 
         if data is not None:
-            self.set_data(data)
+            self.set_data(data, hide_root=hide_root)
 
-    def set_data(self, data: dict[str, t.Any], hide_root: bool = False) -> None:
+    def set_data(self, data: dict[str, t.Any], hide_root: bool = True) -> None:
         """
         Set the data to be displayed.
 
         Args:
             data (dict[str, Any]): The data to be displayed.
-            hide_root (bool, optional): Whether to hide the root node. Defaults to False.
+            hide_root (bool, optional): Whether to hide the root node. Defaults to True.
         """
         self.clear()
 
@@ -56,7 +60,7 @@ class DataTreeWidget(QtWidgets.QTreeWidget):
         data: dict[str, t.Any],
         parent: QtWidgets.QTreeWidgetItem,
         name: str = "",
-        hide_root: bool = False,
+        hide_root: bool = True,
         path: tuple[str | int, ...] = (),
     ) -> None:
         """
@@ -66,7 +70,7 @@ class DataTreeWidget(QtWidgets.QTreeWidget):
             data (dict[str, Any]): A dictionary containing the data to be displayed.
             parent (QtWidgets.QTreeWidgetItem): The parent item under which the data will be displayed.
             name (str, optional): The name to be displayed for the current node. Defaults to "".
-            hide_root (bool, optional): Whether to hide the root node. Defaults to False.
+            hide_root (bool, optional): Whether to hide the root node. Defaults to True.
             path (tuple[str | int, ...], optional): A tuple containing the path to the current node. Defaults to ().
         """
         if hide_root:
@@ -155,7 +159,7 @@ class DataTreeWidget(QtWidgets.QTreeWidget):
             text (str): The text to search for.
         """
         for item in self._nodes.values():
-            item.setHidden(text not in item.text(0))
+            item.setHidden(item.text(0).lower().find(text.lower()) == -1)
 
     def toggle_sort(self) -> None:
         self.sortItems(0, QtCore.Qt.SortOrder.AscendingOrder)
@@ -227,7 +231,7 @@ class DataTreeWidget(QtWidgets.QTreeWidget):
         dialog.exec()
 
 
-class DataTreeWidgetContainer(QtWidgets.QWidget):
+class SearchableDataTreeWidget(QtWidgets.QWidget):
     def __init__(self, allow_edit: bool = False, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         layout = QtWidgets.QVBoxLayout()

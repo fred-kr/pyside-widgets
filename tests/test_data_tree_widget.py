@@ -1,7 +1,7 @@
 import pytest
 from PySide6 import QtCore, QtWidgets
 
-from pyside_widgets.data_tree_widget import DataTreeWidget, DataTreeWidgetContainer
+from pyside_widgets.data_tree_widget import DataTreeWidget, SearchableDataTreeWidget
 
 
 @pytest.fixture
@@ -18,7 +18,7 @@ def tree_widget(qtbot):
 
 @pytest.fixture
 def tree_widget_container(qtbot):
-    widget = DataTreeWidgetContainer()
+    widget = SearchableDataTreeWidget()
     qtbot.addWidget(widget)
     return widget
 

@@ -1,8 +1,9 @@
-from .data_tree_widget import DataTreeWidget, DataTreeWidgetContainer
+from .data_tree_widget import DataTreeWidget, SearchableDataTreeWidget
 from .decimal_spin_box import DecimalSpinBox
 from .enum_combo_box import EnumComboBox
 from .grouped_combo_box import GroupedComboBox
 from .jupyter_console_widget import JupyterConsoleWindow
+from .labeled_slider import LabeledSlider
 from .overlay_widget import OverlayWidget
 from .setting_card_widget import SettingCard
 
@@ -11,8 +12,9 @@ __all__ = [
     "JupyterConsoleWindow",
     "OverlayWidget",
     "DataTreeWidget",
-    "DataTreeWidgetContainer",
+    "SearchableDataTreeWidget",
     "SettingCard",
     "EnumComboBox",
     "DecimalSpinBox",
+    "LabeledSlider",
 ]

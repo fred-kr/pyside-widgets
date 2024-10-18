@@ -59,7 +59,7 @@ class IndeterminateSpinner(QtWidgets.QProgressBar):
             self.start()
 
     @QtCore.Property(int)
-    def startAngle(self) -> int:
+    def startAngle(self) -> int:  # type: ignore
         return self._startAngle
 
     @startAngle.setter
@@ -68,7 +68,7 @@ class IndeterminateSpinner(QtWidgets.QProgressBar):
         self.update()
 
     @QtCore.Property(int)
-    def spanAngle(self) -> int:
+    def spanAngle(self) -> int:  # type: ignore
         return self._spanAngle
 
     @spanAngle.setter
@@ -131,8 +131,8 @@ class IndeterminateSpinner(QtWidgets.QProgressBar):
         pen.setColor(self._bar_color)
         painter.setPen(pen)
 
-        start_angle = -self.startAngle + 180
-        painter.drawArc(rc, (start_angle % 360) * 16, -self.spanAngle * 16)
+        start_angle = -self.startAngle + 180  # type: ignore
+        painter.drawArc(rc, (start_angle % 360) * 16, -self.spanAngle * 16)  # type: ignore
 
     stroke_width = QtCore.Property(int, get_stroke_width, set_stroke_width)
 
@@ -140,6 +140,7 @@ class IndeterminateSpinner(QtWidgets.QProgressBar):
 class OverlayWidget(QtWidgets.QWidget):
     def __init__(self, parent: QtWidgets.QWidget) -> None:
         super().__init__(parent)
+        self.hide()
         self._target = parent
 
         self._container = QtWidgets.QWidget(self)
@@ -186,16 +187,13 @@ class OverlayWidget(QtWidgets.QWidget):
 
     def set_background_color(self, r: int, g: int, b: int, a: int = 128) -> None:
         """
-        Set the background color of the container widget to the provided rgba values
+        Set the background color of the container widget to the provided rgba values.
 
-        :param r: red (0-255)
-        :type r: int
-        :param g: green (0-255)
-        :type g: int
-        :param b: blue (0-255)
-        :type b: int
-        :param a: alpha (0-255), defaults to 128
-        :type a: int, optional
+        Args:
+            r (int): red (0-255)
+            g (int): green (0-255)
+            b (int): blue (0-255)
+            a (int, optional): alpha (0-255), defaults to 128
         """
         self._container.setStyleSheet(f"background: rgba({r}, {g}, {b}, {a});")
 
@@ -203,17 +201,16 @@ class OverlayWidget(QtWidgets.QWidget):
         """
         Set the text of the label
 
-        :param text: The text to display
-        :type text: str
+        Args:
+            text (str): The text to display
         """
         self._text.setText(text)
 
     def set_spinner_color(self, color: QtGui.QColor | str) -> None:
-        """
-        Set the color of the spinner
+        """Set the color of the spinner
 
-        :param color: The color to use
-        :type color: QtGui.QColor | str
+        Args:
+            color: The color to use (QColor or str)
         """
         self._spinner.set_bar_color(color)
 
@@ -221,8 +218,8 @@ class OverlayWidget(QtWidgets.QWidget):
         """
         Disables the target widget, updates the label text if provided, and shows the overlay
 
-        :param text: The text to display, defaults to None
-        :type text: str | None, optional
+        Args:
+            text: The text to display, defaults to None
         """
         self._target.setEnabled(False)
 
@@ -236,9 +233,11 @@ class OverlayWidget(QtWidgets.QWidget):
         self.raise_()
         self.show()
 
+
     def hide_overlay(self) -> None:
         """
         Enables the target widget and hides the overlay
         """
         self._target.setEnabled(True)
         self.hide()
+

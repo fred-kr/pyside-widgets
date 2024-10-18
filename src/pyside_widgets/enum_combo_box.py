@@ -5,7 +5,6 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 ItemDataRole = QtCore.Qt.ItemDataRole
 
-
 class EnumComboBox[T: enum.Enum](QtWidgets.QComboBox):
     """
     QComboBox variant that uses the provided python Enum class to populate the combo box items.

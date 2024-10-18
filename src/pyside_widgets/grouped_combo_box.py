@@ -23,7 +23,7 @@ class ItemType(enum.Enum):
 
 class GroupedComboBox(QtWidgets.QComboBox):
     """
-    A QComboBox variant that allows (visual) grouping of items.
+    A QComboBox variant that allows grouping of items under a header.
     """
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:

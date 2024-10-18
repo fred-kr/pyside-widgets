@@ -22,7 +22,7 @@ class SettingCard(QtWidgets.QFrame):
         editor_widget: QtWidgets.QWidget,
         description: str | None = None,
         icon: QtGui.QIcon | None = None,
-        show_reset_button: bool = True,
+        reset_button: bool | QtWidgets.QToolButton = True,
         parent: QtWidgets.QWidget | None = None,
     ) -> None:
         super().__init__(parent)
@@ -32,9 +32,12 @@ class SettingCard(QtWidgets.QFrame):
         self._icon_label = QtWidgets.QLabel(self)
         self.editor_widget = editor_widget
 
-        self.btn_reset = QtWidgets.QToolButton(self)
-        self.btn_reset.setText("Reset")
-        self.btn_reset.setToolButtonStyle(QtCore.Qt.ToolButtonStyle.ToolButtonTextOnly)
+        if isinstance(reset_button, QtWidgets.QToolButton):
+            self.btn_reset = reset_button
+        else:
+            self.btn_reset = QtWidgets.QToolButton(self)
+            self.btn_reset.setText("Reset")
+            self.btn_reset.setToolButtonStyle(QtCore.Qt.ToolButtonStyle.ToolButtonTextOnly)
         self.btn_reset.clicked.connect(self.emit_reset_clicked)
 
         self.h_layout = QtWidgets.QHBoxLayout(self)
@@ -48,7 +51,7 @@ class SettingCard(QtWidgets.QFrame):
         else:
             self._icon_label.setPixmap(icon.pixmap(16, 16))
 
-        if not show_reset_button:
+        if not reset_button:
             self.btn_reset.hide()
 
         self.setFixedHeight(70 if description else 50)
@@ -64,7 +67,7 @@ class SettingCard(QtWidgets.QFrame):
         self.h_layout.addWidget(self._icon_label, 0, QtCore.Qt.AlignmentFlag.AlignLeft)
         self.h_layout.addSpacing(16)
 
-        self.h_layout.addLayout(self.v_layout)
+        self.h_layout.addLayout(self.v_layout, 1)
         self.v_layout.addWidget(self._title_label, 0, QtCore.Qt.AlignmentFlag.AlignLeft)
         self.v_layout.addWidget(self._description_label, 0, QtCore.Qt.AlignmentFlag.AlignLeft)
 
@@ -94,6 +97,19 @@ class SettingCard(QtWidgets.QFrame):
 
     def set_icon_size(self, size: int) -> None:
         self._icon_label.setFixedSize(size, size)
+
+    def set_reset_button_text(self, text: str) -> None:
+        self.btn_reset.setText(text)
+
+    def set_reset_button_icon(self, icon: QtGui.QIcon) -> None:
+        """
+        Set the icon for the reset button. Has no effect if the button is hidden or its ToolButtonStyle is
+        `ToolButtonTextOnly`.
+
+        Args:
+            icon (QtGui.QIcon): The icon to use.
+        """
+        self.btn_reset.setIcon(icon)
 
     def paintEvent(self, arg__1: QtGui.QPaintEvent) -> None:
         painter = QtGui.QPainter(self)
