@@ -1,9 +1,23 @@
+import enum
 import typing as t
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from ._style_sheets import CARD_STYLE_SHEET
 from ._utils import is_dark_theme
+
+
+class _Nothing(enum.Enum):
+    NOTHING = enum.auto()
+
+    def __repr__(self) -> str:
+        return "NOTHING"
+
+    def __bool__(self) -> bool:
+        return False
+
+
+NOTHING = _Nothing.NOTHING
 
 
 class SettingCard(QtWidgets.QFrame):
@@ -20,6 +34,8 @@ class SettingCard(QtWidgets.QFrame):
         self,
         title: str,
         editor_widget: QtWidgets.QWidget,
+        default_value: t.Any | None = NOTHING,
+        set_value_name: str | None = None,
         description: str | None = None,
         icon: QtGui.QIcon | None = None,
         reset_button: bool | QtWidgets.QToolButton = True,
@@ -31,6 +47,8 @@ class SettingCard(QtWidgets.QFrame):
         self._description_label = QtWidgets.QLabel(description or "", self)
         self._icon_label = QtWidgets.QLabel(self)
         self.editor_widget = editor_widget
+        self._default_value = default_value
+        self._set_value_name = set_value_name
 
         if isinstance(reset_button, QtWidgets.QToolButton):
             self.btn_reset = reset_button
@@ -38,7 +56,7 @@ class SettingCard(QtWidgets.QFrame):
             self.btn_reset = QtWidgets.QToolButton(self)
             self.btn_reset.setText("Reset")
             self.btn_reset.setToolButtonStyle(QtCore.Qt.ToolButtonStyle.ToolButtonTextOnly)
-        self.btn_reset.clicked.connect(self.emit_reset_clicked)
+        self.btn_reset.clicked.connect(self._on_reset_clicked)
 
         self.h_layout = QtWidgets.QHBoxLayout(self)
         self.v_layout = QtWidgets.QVBoxLayout()
@@ -125,5 +143,8 @@ class SettingCard(QtWidgets.QFrame):
         painter.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), 6, 6)
 
     @QtCore.Slot()
-    def emit_reset_clicked(self) -> None:
+    def _on_reset_clicked(self) -> None:
         self.sig_reset_clicked.emit()
+        if self._default_value is NOTHING or not self._set_value_name:
+            return
+        getattr(self.editor_widget, self._set_value_name)(self._default_value)
