@@ -144,7 +144,7 @@ class SettingCard(QtWidgets.QFrame):
 
     @QtCore.Slot()
     def _on_reset_clicked(self) -> None:
-        self.sig_reset_clicked.emit()
         if self._default_value is NOTHING or not self._set_value_name:
             return
         getattr(self.editor_widget, self._set_value_name)(self._default_value)
+        self.sig_reset_clicked.emit()
