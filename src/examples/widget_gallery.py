@@ -105,10 +105,14 @@ def main() -> None:
     enum_cb_container = QtWidgets.QWidget()
     enum_cb_layout = QtWidgets.QVBoxLayout(enum_cb_container)
     enum_combo_box = EnumComboBox(EnumA)
+
+    btn_change_enum_class = QtWidgets.QPushButton("Change enum class")
+    btn_change_enum_class.clicked.connect(lambda: enum_combo_box.set_enum_class(None))
+
+    enum_cb_layout.addWidget(btn_change_enum_class)
     enum_cb_layout.addWidget(enum_combo_box)
     enum_cb_layout.addStretch()
     tab_widget.addTab(enum_cb_container, "EnumComboBox")
-
     # SettingCard
     setting_card_container = QtWidgets.QWidget()
     setting_card_layout = QtWidgets.QVBoxLayout(setting_card_container)
@@ -116,11 +120,13 @@ def main() -> None:
     setting_card = SettingCard(
         title="Example Setting",
         editor_widget=setting_widget,
+        default_value=SettingEnum.DEFAULT,
+        set_value_name="set_current_enum",
         description="This is a setting card with EnumComboBox as the editor widget",
         icon=QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.Computer),
         reset_button=True,
     )
-    setting_card.sig_reset_clicked.connect(lambda: setting_widget.set_current_enum(SettingEnum.DEFAULT))
+    # setting_card.sig_reset_clicked.connect(lambda: setting_widget.set_current_enum(SettingEnum.DEFAULT))
     setting_card_layout.addWidget(setting_card)
     setting_card_layout.addStretch()
     tab_widget.addTab(setting_card_container, "SettingCard")

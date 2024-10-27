@@ -5,6 +5,13 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 
 class ValueSlider(QtWidgets.QSlider):
+    """
+    A custom QSlider that displays its current value above the slider handle.
+
+    This class extends QSlider to provide a visual representation of the current value directly on the slider. It's
+    oriented horizontally by default and expands horizontally while maintaining a minimum vertical size.
+    """
+
     def __init__(
         self,
         parent: QtWidgets.QWidget | None = None,
@@ -66,6 +73,14 @@ class ValueSlider(QtWidgets.QSlider):
 
 
 class LabeledSlider(QtWidgets.QWidget):
+    """
+    A compound widget that combines a ValueSlider with labels for title, minimum, and maximum values.
+
+    This widget provides a customizable slider with an optional title and min/max labels. It allows for various
+    positioning options for the title label and can show or hide the min/max labels as needed.
+    """
+
+    # Wrapped slider signals
     actionTriggered: t.ClassVar = QtCore.Signal(int)  # QtWidgets.QAbstractSlider.SliderAction
     rangeChanged: t.ClassVar = QtCore.Signal(int, int)  # min, max
     sliderMoved: t.ClassVar = QtCore.Signal(int)  # new slider position
@@ -117,14 +132,12 @@ class LabeledSlider(QtWidgets.QWidget):
         self.maximum_label.setText(f"{self._slider.maximum()}")
 
         main_layout = QtWidgets.QGridLayout()
-        # main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setVerticalSpacing(0)
 
         tlp = self.TitleLabelPosition
         alignment = title_pos.value
 
         h_layout_slider = QtWidgets.QHBoxLayout()
-        # h_layout_slider.setContentsMargins(0, 0, 0, 0)
 
         h_layout_slider.addWidget(self.minimum_label, 0, QtCore.Qt.AlignmentFlag.AlignRight)
         h_layout_slider.addWidget(self._slider, 1)
@@ -193,7 +206,7 @@ class LabeledSlider(QtWidgets.QWidget):
         return QtCore.Qt.Orientation.Horizontal
 
     def setOrientation(self, orientation: QtCore.Qt.Orientation) -> None:
-        raise NotImplementedError("LabeledSlider does not support vertical orientation")
+        raise NotImplementedError("LabeledSlider does not support vertical orientation yet.")
 
     def pageStep(self) -> int:
         return self._slider.pageStep()

@@ -1,23 +1,9 @@
-import enum
 import typing as t
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from ._style_sheets import CARD_STYLE_SHEET
-from ._utils import is_dark_theme
-
-
-class _Nothing(enum.Enum):
-    NOTHING = enum.auto()
-
-    def __repr__(self) -> str:
-        return "NOTHING"
-
-    def __bool__(self) -> bool:
-        return False
-
-
-NOTHING = _Nothing.NOTHING
+from ._utils import NOTHING, is_dark_theme
 
 
 class SettingCard(QtWidgets.QFrame):
@@ -99,6 +85,7 @@ class SettingCard(QtWidgets.QFrame):
         self.h_layout.addWidget(self.btn_reset)
         self.h_layout.addSpacing(16)
 
+        # Set name so that it can be found in stylesheet
         self._description_label.setObjectName("textLabel")
 
         self.setStyleSheet(CARD_STYLE_SHEET)
@@ -144,7 +131,10 @@ class SettingCard(QtWidgets.QFrame):
 
     @QtCore.Slot()
     def _on_reset_clicked(self) -> None:
+        """
+        Emits the `sig_reset_clicked` signal. If a default value and setter function have been
+        """
+        self.sig_reset_clicked.emit()
         if self._default_value is NOTHING or not self._set_value_name:
             return
         getattr(self.editor_widget, self._set_value_name)(self._default_value)
-        self.sig_reset_clicked.emit()
