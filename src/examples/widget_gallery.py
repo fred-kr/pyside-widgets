@@ -83,7 +83,7 @@ def main() -> None:
     tab_widget.addTab(grouped_cb_container, "GroupedComboBox")
 
     # JupyterConsoleWindow
-    jupyter_console = JupyterConsoleWindow("lightbg")
+    jupyter_console = JupyterConsoleWindow(style="lightbg")
     jupyter_console.console.execute("print('Hello from Jupyter Console!')", True)
     tab_widget.addTab(jupyter_console, "JupyterConsoleWindow")
 
