@@ -31,9 +31,13 @@ class JupyterConsoleWidget(inprocess.QtInProcessRichJupyterWidget):
 
 class JupyterConsoleWindow(QtWidgets.QWidget):
     def __init__(
-        self, style: t.Literal["lightbg", "linux", "nocolor"] = "linux", parent: QtWidgets.QWidget | None = None
+        self,
+        namespace: dict[str, t.Any] | None = None,
+        style: t.Literal["lightbg", "linux", "nocolor"] = "linux",
+        parent: QtWidgets.QWidget | None = None,
     ) -> None:
         super().__init__(parent)
+        namespace = namespace or {}
 
         self.toggle_view_action = QtGui.QAction("Toggle Jupyter Console", self)
         self.toggle_view_action.setIcon(QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.Computer))
@@ -49,18 +53,14 @@ class JupyterConsoleWindow(QtWidgets.QWidget):
         self.setWindowTitle("Jupyter Console")
         self.resize(900, 600)
 
-        self._prepare_console()
+        self._prepare_console(namespace)
 
-    def _prepare_console(self) -> None:
+    def _prepare_console(self, namespace: dict[str, t.Any]) -> None:
         if self.console.kernel_manager.kernel is None:
             return
         if self.console.kernel_manager.kernel.shell is None:
             return
-        self.console.kernel_manager.kernel.shell.push(
-            dict(
-                app=QtWidgets.QApplication.instance(),
-            )
-        )
+        self.console.kernel_manager.kernel.shell.push(namespace)
         self.console.execute("whos")
 
     @QtCore.Slot(QtGui.QCloseEvent)
