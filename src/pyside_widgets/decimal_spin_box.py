@@ -77,6 +77,14 @@ class DecimalSpinBox(QtWidgets.QAbstractSpinBox):
         """Returns the current value as a Decimal."""
         return self._value
 
+    def intValue(self) -> int:
+        """Returns the current value as an integer."""
+        return int(self._value)
+
+    def floatValue(self) -> float:
+        """Returns the current value as a float."""
+        return float(self._value)
+
     def setValue(self, value: _TSupportsDecimal) -> None:
         """Sets the current value, ensuring it is within range."""
         value = D(value)
