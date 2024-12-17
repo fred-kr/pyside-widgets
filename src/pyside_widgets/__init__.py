@@ -8,6 +8,7 @@ from .labeled_slider import LabeledSlider
 from .overlay_widget import OverlayWidget
 from .setting_card_widget import SettingCard
 from .toggle_switch import AnimatedToggle, Toggle
+from .command_bar import CommandBar
 
 __all__ = [
     "GroupedComboBox",
@@ -22,4 +23,5 @@ __all__ = [
     "ColorPickerButton",
     "AnimatedToggle",
     "Toggle",
+    "CommandBar",
 ]

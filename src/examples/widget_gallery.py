@@ -6,6 +6,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 from pyside_widgets import (
     ColorPickerButton,
+    CommandBar,
     DataTreeWidget,
     DecimalSpinBox,
     EnumComboBox,
@@ -56,6 +57,7 @@ example_data = {
 
 
 def main() -> None:
+    # print(QtWidgets.QStyleFactory.keys())
     QtWidgets.QApplication.setStyle("Fusion")
     app = QtWidgets.QApplication([])
 
@@ -240,6 +242,30 @@ def main() -> None:
     toggle_button_container.setLayout(toggle_button_layout)
 
     tab_widget.addTab(toggle_button_container, "Toggle / AnimatedToggle")
+
+    # CommandBar
+    command_bar_container = QtWidgets.QWidget()
+    command_bar_layout = QtWidgets.QVBoxLayout()
+    command_bar = CommandBar()
+    action1 = QtGui.QAction(QtGui.QIcon("src/icons/MoreHorizontal.svg"), "Action 1")
+    action2 = QtGui.QAction("Action 2")
+    action3 = QtGui.QAction("Action 3")
+    hidden_action = QtGui.QAction("Hidden Action")
+    action1.triggered.connect(lambda: print("Action 1 triggered"))
+    action2.triggered.connect(lambda: print("Action 2 triggered"))
+    action3.triggered.connect(lambda: print("Action 3 triggered"))
+    hidden_action.triggered.connect(lambda: print("Hidden Action triggered"))
+
+    command_bar.addActions([action1, action2])
+    command_bar.addSeparator()
+    command_bar.addAction(action3)
+    command_bar.addHiddenAction(hidden_action)
+
+    command_bar_layout.addWidget(command_bar)
+    command_bar_layout.addStretch()
+    command_bar_container.setLayout(command_bar_layout)
+
+    tab_widget.addTab(command_bar_container, "CommandBar")
 
     window.setCentralWidget(tab_widget)
     window.resize(1920, 1080)
