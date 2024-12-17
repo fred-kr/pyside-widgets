@@ -28,6 +28,7 @@ class ToolButton(QtWidgets.QToolButton):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
 
+        self.setAutoRaise(True)
         self.isPressed = False
         self.isHover = False
         self.setIconSize(QtCore.QSize(16, 16))
@@ -65,6 +66,22 @@ class ToolButton(QtWidgets.QToolButton):
         state: QtGui.QIcon.State = QtGui.QIcon.State.Off,
     ) -> None:
         draw_icon(icon, painter, rect, state)
+
+    def paintEvent(self, arg__1: QtGui.QPaintEvent) -> None:
+        super().paintEvent(arg__1)
+
+        painter = QtGui.QPainter(self)
+        painter.setRenderHints(QtGui.QPainter.RenderHint.Antialiasing | QtGui.QPainter.RenderHint.SmoothPixmapTransform)
+
+        if not self.isEnabled():
+            painter.setOpacity(0.43)
+        elif self.isPressed:
+            painter.setOpacity(0.63)
+
+        w, h = self.iconSize().width(), self.iconSize().height()
+        y = (self.height() - h) / 2
+        x = (self.width() - w) / 2
+        self._drawIcon(self._icon, painter, QtCore.QRectF(x, y, w, h))
 
 
 class CommandButton(ToolButton):
@@ -197,10 +214,10 @@ class MoreActionsButton(CommandButton):
     def sizeHint(self) -> QtCore.QSize:
         return QtCore.QSize(40, 34)
 
-    def clearState(self) -> None:
-        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_UnderMouse, False)
-        e = QtGui.QHoverEvent(QtCore.QEvent.Type.HoverLeave, QtCore.QPoint(-1, -1), QtCore.QPoint())
-        QtWidgets.QApplication.sendEvent(self, e)
+    # def clearState(self) -> None:
+    #     self.setAttribute(QtCore.Qt.WidgetAttribute.WA_UnderMouse, False)
+    #     e = QtGui.QHoverEvent(QtCore.QEvent.Type.HoverLeave, QtCore.QPoint(-1, -1), QtCore.QPoint())
+    #     QtWidgets.QApplication.sendEvent(self, e)
 
 
 class CommandSeparator(QtWidgets.QWidget):
@@ -233,7 +250,6 @@ class CommandBar(QtWidgets.QFrame):
         self.btn_more.hide()
 
         set_font(self, 12)
-        # self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
 
     @property
     def command_buttons(self) -> list[CommandButton]:
@@ -432,7 +448,7 @@ class CommandBar(QtWidgets.QFrame):
             button.setFont(arg__1)
 
     def _showMoreActionsMenu(self) -> None:
-        self.btn_more.clearState()
+        # self.btn_more.clearState()
         actions = self._hidden_actions.copy()
 
         for w in reversed(self._hidden_widgets):
