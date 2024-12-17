@@ -2,6 +2,8 @@ from typing import Iterable, Sequence
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
+import pyside_widgets.rc_resources  # noqa: F401  # type: ignore
+
 
 def set_font(
     widget: QtWidgets.QWidget, font_size: int = 14, weight: QtGui.QFont.Weight = QtGui.QFont.Weight.Normal
@@ -190,7 +192,7 @@ class MoreActionsButton(CommandButton):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
 
-        self.setIcon(QtGui.QIcon("src/icons/MoreHorizontal.svg"))
+        self.setIcon(QtGui.QIcon("://icons/MoreHorizontal.svg"))
 
     def sizeHint(self) -> QtCore.QSize:
         return QtCore.QSize(40, 34)
@@ -230,8 +232,8 @@ class CommandBar(QtWidgets.QFrame):
         self.btn_more.clicked.connect(self._showMoreActionsMenu)
         self.btn_more.hide()
 
-        self.setFont(QtGui.QFont("Segoe UI", 12))
-        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
+        set_font(self, 12)
+        # self.setAttribute(QtCore.Qt.WidgetAttribute.WA_TranslucentBackground)
 
     @property
     def command_buttons(self) -> list[CommandButton]:
@@ -292,7 +294,7 @@ class CommandBar(QtWidgets.QFrame):
         self._insertWidgetToLayout(-1, widget)
 
     def removeAction(self, action: QtGui.QAction):
-        if agtion not in self.actions():
+        if action not in self.actions():
             return
 
         for w in self.command_buttons:

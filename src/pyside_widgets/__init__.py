@@ -1,4 +1,5 @@
 from .color_picker_button import ColorPickerButton
+from .command_bar import CommandBar
 from .data_tree_widget import DataTreeWidget, SearchableDataTreeWidget
 from .decimal_spin_box import DecimalSpinBox
 from .enum_combo_box import EnumComboBox
@@ -8,7 +9,6 @@ from .labeled_slider import LabeledSlider
 from .overlay_widget import OverlayWidget
 from .setting_card_widget import SettingCard
 from .toggle_switch import AnimatedToggle, Toggle
-from .command_bar import CommandBar
 
 __all__ = [
     "GroupedComboBox",
