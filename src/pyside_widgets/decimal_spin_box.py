@@ -31,15 +31,27 @@ class DecimalSpinBox(QtWidgets.QAbstractSpinBox):
         self._decimal_places = prec
         self._updateDisplay()
 
+    def minimum(self) -> decimal.Decimal:
+        """Returns the current minimum value."""
+        return self._minimum
+
     def setMinimum(self, min: _TSupportsDecimal) -> None:
         """Sets the minimum value."""
         self._minimum = D(min)
         self._updateDisplay()
 
+    def maximum(self) -> decimal.Decimal:
+        """Returns the current maximum value."""
+        return self._maximum
+
     def setMaximum(self, max: _TSupportsDecimal) -> None:
         """Sets the maximum value."""
         self._maximum = D(max)
         self._updateDisplay()
+
+    def range(self) -> tuple[decimal.Decimal, decimal.Decimal]:
+        """Returns the minimum and maximum values."""
+        return self._minimum, self._maximum
 
     def setRange(self, min: _TSupportsDecimal, max: _TSupportsDecimal) -> None:
         """Sets the minimum and maximum values."""

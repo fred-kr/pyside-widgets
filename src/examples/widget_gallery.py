@@ -5,6 +5,7 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from pyside_widgets import (
+    AnimatedToggle,
     ColorPickerButton,
     CommandBar,
     DataTreeWidget,
@@ -16,8 +17,8 @@ from pyside_widgets import (
     OverlayWidget,
     SearchableDataTreeWidget,
     SettingCard,
+    Toggle,
 )
-from pyside_widgets.toggle_switch import AnimatedToggle, Toggle
 
 
 class EnumA(enum.Enum):
