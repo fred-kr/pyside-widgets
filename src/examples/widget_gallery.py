@@ -110,12 +110,14 @@ def main() -> None:
     enum_cb_container = QtWidgets.QWidget()
     enum_cb_layout = QtWidgets.QVBoxLayout(enum_cb_container)
     enum_combo_box = EnumComboBox(EnumA)
+    enum_combo_box_2 = EnumComboBox(SettingEnum, allow_none=True)
 
     btn_change_enum_class = QtWidgets.QPushButton("Change enum class")
     btn_change_enum_class.clicked.connect(lambda: enum_combo_box.set_enum_class(None))
 
     enum_cb_layout.addWidget(btn_change_enum_class)
-    enum_cb_layout.addWidget(enum_combo_box)
+    enum_cb_layout.addWidget(enum_combo_box, 1)
+    enum_cb_layout.addWidget(enum_combo_box_2, 1)
     enum_cb_layout.addStretch()
     tab_widget.addTab(enum_cb_container, "EnumComboBox")
     # SettingCard

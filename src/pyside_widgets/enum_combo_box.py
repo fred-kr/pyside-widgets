@@ -7,6 +7,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 ItemDataRole = QtCore.Qt.ItemDataRole
 
 PLACEHOLDER_TEXT: t.Final = "Select..."
+NO_SELECTION_TEXT: t.Final = "<No Selection>"
 
 
 class EnumComboBox[T: enum.Enum](QtWidgets.QComboBox):
@@ -21,6 +22,7 @@ class EnumComboBox[T: enum.Enum](QtWidgets.QComboBox):
     def __init__(
         self,
         enum_class: type[T] | None = None,
+        allow_none: bool = False,
         parent: QtWidgets.QWidget | None = None,
     ) -> None:
         super().__init__(parent)
@@ -30,12 +32,13 @@ class EnumComboBox[T: enum.Enum](QtWidgets.QComboBox):
 
         self.setPlaceholderText(PLACEHOLDER_TEXT)
 
-        self.set_enum_class(enum_class)
+        self.set_enum_class(enum_class, allow_none=allow_none)
         self.currentIndexChanged.connect(self._on_current_index_changed)
 
     def set_enum_class(
         self,
         enum_class: type[enum.Enum] | None,
+        allow_none: bool = False,
         text_data: Callable[[enum.Enum], str] | None = None,
         icon_data: Callable[[enum.Enum], QtGui.QIcon] | None = None,
     ) -> None:
@@ -44,6 +47,7 @@ class EnumComboBox[T: enum.Enum](QtWidgets.QComboBox):
 
         Args:
             enum_class: The enum class to be used in the combo box.
+            allow_none: If True, adds a placeholder item as the first item with text "<No Selection>" and value `None`.
             text_data: Optional callable to provide custom text for each enum member.
                 Defaults to None, using the enum member's name if not provided.
             icon_data: Optional callable to provide custom icon for each enum member.
@@ -61,6 +65,11 @@ class EnumComboBox[T: enum.Enum](QtWidgets.QComboBox):
             if icon_data is not None:
                 item.setIcon(icon_data(enum_member))
             self._enum_model.appendRow(item)
+
+        if allow_none:
+            none_item = QtGui.QStandardItem(NO_SELECTION_TEXT)
+            none_item.setData(None, role=ItemDataRole.UserRole)
+            self._enum_model.insertRow(0, none_item)
 
         self.setModel(self._enum_model)
 
