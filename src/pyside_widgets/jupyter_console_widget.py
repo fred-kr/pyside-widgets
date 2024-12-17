@@ -47,7 +47,7 @@ class JupyterConsoleWindow(QtWidgets.QWidget):
         self.console = JupyterConsoleWidget(style=style)
         layout = QtWidgets.QVBoxLayout()
 
-        layout.addWidget(self.console)
+        layout.addWidget(self.console)  # type: ignore
         self.setLayout(layout)
 
         self.setWindowTitle("Jupyter Console")

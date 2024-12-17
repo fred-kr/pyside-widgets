@@ -6,6 +6,7 @@ from .jupyter_console_widget import JupyterConsoleWindow
 from .labeled_slider import LabeledSlider
 from .overlay_widget import OverlayWidget
 from .setting_card_widget import SettingCard
+from .color_picker_button import ColorPickerButton
 
 __all__ = [
     "GroupedComboBox",
@@ -17,4 +18,5 @@ __all__ = [
     "EnumComboBox",
     "DecimalSpinBox",
     "LabeledSlider",
+    "ColorPickerButton",
 ]

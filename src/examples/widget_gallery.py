@@ -2,9 +2,10 @@ import enum
 import types
 
 import numpy as np
-from PySide6 import QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from pyside_widgets import (
+    ColorPickerButton,
     DataTreeWidget,
     DecimalSpinBox,
     EnumComboBox,
@@ -15,6 +16,7 @@ from pyside_widgets import (
     SearchableDataTreeWidget,
     SettingCard,
 )
+from pyside_widgets.toggle_switch import AnimatedToggle, Toggle
 
 
 class EnumA(enum.Enum):
@@ -54,6 +56,7 @@ example_data = {
 
 
 def main() -> None:
+    QtWidgets.QApplication.setStyle("Fusion")
     app = QtWidgets.QApplication([])
 
     window = QtWidgets.QMainWindow()
@@ -159,7 +162,7 @@ def main() -> None:
     output = QtWidgets.QTextEdit()
     output.setReadOnly(True)
 
-    decimal_spin_box.valueChanged.connect(lambda value: output.append(str(value)))
+    decimal_spin_box.valueChanged.connect(lambda value: output.append(str(value)))  # type: ignore
 
     min_input = LabeledSlider(title="Minimum", title_pos=LabeledSlider.TitleLabelPosition.TOP_LEFT)
     min_input.setRange(-1_000, 1_000)
@@ -210,6 +213,33 @@ def main() -> None:
     labeled_slider_container.setLayout(labeled_slider_layout)
 
     tab_widget.addTab(labeled_slider_container, "LabeledSlider")
+
+    # ColorPickerButton
+    color_picker_container = QtWidgets.QWidget()
+    color_picker_layout = QtWidgets.QVBoxLayout()
+    color_picker = ColorPickerButton(color=QtGui.QColor("crimson"))
+    color_picker.sig_color_changed.connect(lambda color: print(color.name()))  # type: ignore
+
+    color_picker_layout.addWidget(color_picker, alignment=QtCore.Qt.AlignmentFlag.AlignHCenter)
+    color_picker_layout.addStretch()
+    color_picker_container.setLayout(color_picker_layout)
+
+    tab_widget.addTab(color_picker_container, "ColorPickerButton")
+
+    # Toggle / AnimatedToggle
+    toggle_button_container = QtWidgets.QWidget()
+    toggle_button_layout = QtWidgets.QVBoxLayout()
+
+    toggle = Toggle()
+    toggle_button = AnimatedToggle(checked_color="#1abc9c", pulse_checked_color="#4400B0EE")
+
+    toggle_button_layout.addWidget(toggle, alignment=QtCore.Qt.AlignmentFlag.AlignLeft)
+    toggle_button_layout.addWidget(toggle_button, alignment=QtCore.Qt.AlignmentFlag.AlignLeft)
+
+    toggle_button_layout.addStretch()
+    toggle_button_container.setLayout(toggle_button_layout)
+
+    tab_widget.addTab(toggle_button_container, "Toggle / AnimatedToggle")
 
     window.setCentralWidget(tab_widget)
     window.resize(1920, 1080)
