@@ -77,9 +77,17 @@ class SettingCard(QtWidgets.QFrame):
 
         self.h_layout.addSpacing(16)
 
-        min_width = max(int(self.width() * 0.25), editor_widget.minimumWidth())
-        editor_widget.setMinimumWidth(min_width)
-        self.h_layout.addWidget(editor_widget, 0, QtCore.Qt.AlignmentFlag.AlignRight)
+        editor_layout = QtWidgets.QHBoxLayout()
+        editor_layout.setContentsMargins(0, 0, 0, 0)
+        editor_layout.setSpacing(0)
+
+        editor_layout.addStretch(1)
+
+        editor_layout.addWidget(self.editor_widget, 1, QtCore.Qt.AlignmentFlag.AlignRight)
+        # min_width = max(int(self.width() * 0.25), editor_widget.minimumWidth())
+        # editor_widget.setMinimumWidth(min_width)
+
+        self.h_layout.addLayout(editor_layout, 1)
         self.h_layout.addSpacing(8)
 
         self.h_layout.addWidget(self.btn_reset)

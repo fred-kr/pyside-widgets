@@ -25,6 +25,8 @@ class Toggle(QtWidgets.QCheckBox):
         self.setContentsMargins(8, 0, 8, 0)
         self._handle_position = 0
 
+        self.setSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Fixed)
+
         self.stateChanged.connect(self.handle_state_change)
 
     def sizeHint(self) -> QtCore.QSize:

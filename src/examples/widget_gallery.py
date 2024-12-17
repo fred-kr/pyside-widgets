@@ -233,8 +233,8 @@ def main() -> None:
     toggle = Toggle()
     toggle_button = AnimatedToggle(checked_color="#1abc9c", pulse_checked_color="#4400B0EE")
 
-    toggle_button_layout.addWidget(toggle, alignment=QtCore.Qt.AlignmentFlag.AlignLeft)
-    toggle_button_layout.addWidget(toggle_button, alignment=QtCore.Qt.AlignmentFlag.AlignLeft)
+    toggle_button_layout.addWidget(toggle)
+    toggle_button_layout.addWidget(toggle_button)
 
     toggle_button_layout.addStretch()
     toggle_button_container.setLayout(toggle_button_layout)
