@@ -3,15 +3,7 @@ from typing import Iterable, Sequence
 from PySide6 import QtCore, QtGui, QtWidgets
 
 import pyside_widgets.rc_resources  # noqa: F401  # type: ignore
-
-
-def set_font(
-    widget: QtWidgets.QWidget, font_size: int = 14, weight: QtGui.QFont.Weight = QtGui.QFont.Weight.Normal
-) -> None:
-    font = widget.font()
-    font.setPointSize(font_size)
-    font.setWeight(weight)
-    widget.setFont(font)
+from pyside_widgets._utils import set_font
 
 
 def draw_icon(

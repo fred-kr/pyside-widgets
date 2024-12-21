@@ -84,6 +84,8 @@ def main() -> None:
     grouped_combo_box.currentIndexChanged.connect(
         lambda: print(f"Selected item: {grouped_combo_box.currentText()}, item data: {grouped_combo_box.currentData()}")
     )
+
+
     grouped_cb_layout.addWidget(grouped_combo_box)
     grouped_cb_layout.addStretch()
     tab_widget.addTab(grouped_cb_container, "GroupedComboBox")
@@ -222,10 +224,19 @@ def main() -> None:
     # ColorPickerButton
     color_picker_container = QtWidgets.QWidget()
     color_picker_layout = QtWidgets.QVBoxLayout()
-    color_picker = ColorPickerButton(color=QtGui.QColor("crimson"))
-    color_picker.sig_color_changed.connect(lambda color: print(color.name()))  # type: ignore
+    color_picker = ColorPickerButton()
+    color_picker.sig_color_changed.connect(lambda color: print(f"Color 1: {color.name()}"))
+
+    color_picker2 = ColorPickerButton()
+    color_picker2.set_show_alpha(True)
+    color_picker2.sig_color_changed.connect(lambda color: print(f"Color 2: {color.name()}"))
+
+    btn_set_invalid_color = QtWidgets.QPushButton("Set Invalid Color")
+    btn_set_invalid_color.clicked.connect(lambda: color_picker.set_color(QtGui.QColor("invalid_color")))
 
     color_picker_layout.addWidget(color_picker, alignment=QtCore.Qt.AlignmentFlag.AlignHCenter)
+    color_picker_layout.addWidget(color_picker2, alignment=QtCore.Qt.AlignmentFlag.AlignHCenter)
+    color_picker_layout.addWidget(btn_set_invalid_color, alignment=QtCore.Qt.AlignmentFlag.AlignHCenter)
     color_picker_layout.addStretch()
     color_picker_container.setLayout(color_picker_layout)
 
