@@ -1,14 +1,14 @@
-from .color_picker_button import ColorPickerButton
-from .command_bar import CommandBar
-from .data_tree_widget import DataTreeWidget, SearchableDataTreeWidget
-from .decimal_spin_box import DecimalSpinBox
-from .enum_combo_box import EnumComboBox
-from .grouped_combo_box import GroupedComboBox
-from .jupyter_console_widget import JupyterConsoleWindow
-from .labeled_slider import LabeledSlider
-from .overlay_widget import OverlayWidget
-from .setting_card_widget import SettingCard
-from .toggle_switch import AnimatedToggle, Toggle
+from pyside_widgets.color_picker_button import ColorPickerButton
+from pyside_widgets.command_bar import CommandBar
+from pyside_widgets.data_tree_widget import DataTreeWidget, SearchableDataTreeWidget
+from pyside_widgets.decimal_spin_box import DecimalSpinBox
+from pyside_widgets.enum_combo_box import EnumComboBox
+from pyside_widgets.grouped_combo_box import GroupedComboBox
+from pyside_widgets.jupyter_console_widget import JupyterConsoleWindow
+from pyside_widgets.labeled_slider import LabeledSlider
+from pyside_widgets.overlay_widget import OverlayWidget
+from pyside_widgets.setting_card_widget import SettingCard
+from pyside_widgets.toggle_switch import AnimatedToggle, Toggle
 
 __all__ = [
     "GroupedComboBox",
