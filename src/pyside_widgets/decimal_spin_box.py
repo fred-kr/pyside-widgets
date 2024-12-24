@@ -1,7 +1,7 @@
 import decimal
 import typing as t
 
-from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtDesigner, QtGui, QtWidgets
 
 D = decimal.Decimal
 type _TSupportsDecimal = decimal.Decimal | float | str | tuple[int, t.Sequence[int], int]
@@ -153,3 +153,53 @@ class DecimalSpinBox(QtWidgets.QAbstractSpinBox):
     def valueFromText(self, text: str) -> decimal.Decimal:
         """Returns the value represented by the given text."""
         return D(text)
+
+
+DOM_XML = """
+<ui language='c++'>
+    <widget class='DecimalSpinBox' name='decimalSpinBox'>
+    </widget>
+</ui>
+"""
+
+
+class DecimalSpinBoxPlugin(QtDesigner.QDesignerCustomWidgetInterface):
+    def __init__(self) -> None:
+        super().__init__()
+        self._initialized = False
+
+    def createWidget(self, parent: QtWidgets.QWidget) -> QtWidgets.QWidget:
+        return DecimalSpinBox(parent=parent)
+
+    def domXml(self) -> str:
+        return DOM_XML
+
+    def group(self) -> str:
+        return ""
+
+    def icon(self) -> QtGui.QIcon:
+        return QtGui.QIcon()
+
+    def includeFile(self) -> str:
+        return "decimal_spin_box"
+
+    def initialize(self, core: QtDesigner.QDesignerFormEditorInterface) -> None:
+        if self._initialized:
+            return
+
+        self._initialized = True
+
+    def isContainer(self) -> bool:
+        return False
+
+    def isInitialized(self) -> bool:
+        return self._initialized
+
+    def name(self) -> str:
+        return "DecimalSpinBox"
+
+    def toolTip(self) -> str:
+        return "QAbstractSpinBox variant that uses python decimal.Decimal"
+
+    def whatsThis(self) -> str:
+        return self.toolTip()

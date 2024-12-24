@@ -1,4 +1,6 @@
-from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtDesigner, QtGui, QtWidgets
+
+type ColorLike = QtCore.Qt.GlobalColor | QtGui.QColor | str
 
 
 class IndeterminateSpinner(QtWidgets.QProgressBar):
@@ -143,8 +145,11 @@ class OverlayWidget(QtWidgets.QWidget):
         self.hide()
         self._target = parent
 
+        self._bg_color = QtGui.QColor(0, 0, 0, 128)
+        self._bar_color = QtGui.QColor("cornflowerblue")
+
         self._container = QtWidgets.QWidget(self)
-        self._container.setStyleSheet("background: rgba(0, 0, 0, 128);")
+        self._container.setStyleSheet(f"background: {self._bg_color.name()};")
 
         self._layout = QtWidgets.QVBoxLayout(self._container)
         self._layout.setContentsMargins(0, 0, 0, 0)
@@ -166,7 +171,7 @@ class OverlayWidget(QtWidgets.QWidget):
         self._text.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
 
         self._spinner = IndeterminateSpinner(self._content)
-        self._spinner.set_bar_color("cornflowerblue")
+        self._spinner.set_bar_color(self._bar_color)
 
         self._layout_content.addWidget(
             self._text,
@@ -185,17 +190,21 @@ class OverlayWidget(QtWidgets.QWidget):
             QtCore.Qt.AlignmentFlag.AlignHCenter | QtCore.Qt.AlignmentFlag.AlignVCenter,
         )
 
-    def set_background_color(self, r: int, g: int, b: int, a: int = 128) -> None:
+    def get_bg_color(self) -> QtGui.QColor:
+        return self._bg_color
+
+    def set_bg_color(self, color: ColorLike) -> None:
         """
         Set the background color of the container widget to the provided rgba values.
 
         Args:
-            r (int): red (0-255)
-            g (int): green (0-255)
-            b (int): blue (0-255)
-            a (int, optional): alpha (0-255), defaults to 128
+            color (ColorLike): The color to set the background to
         """
-        self._container.setStyleSheet(f"background: rgba({r}, {g}, {b}, {a});")
+        self._bg_color = QtGui.QColor(color)
+        self._container.setStyleSheet(f"background: {self._bg_color.name()};")
+
+    def get_text(self) -> str:
+        return self._text.text()
 
     def set_text(self, text: str) -> None:
         """
@@ -206,13 +215,13 @@ class OverlayWidget(QtWidgets.QWidget):
         """
         self._text.setText(text)
 
-    def set_spinner_color(self, color: QtGui.QColor | str) -> None:
-        """Set the color of the spinner
+    def get_bar_color(self) -> QtGui.QColor:
+        return self._bar_color
 
-        Args:
-            color: The color to use (QColor or str)
-        """
-        self._spinner.set_bar_color(color)
+    def set_bar_color(self, color: ColorLike) -> None:
+        """Set the color of the spinner"""
+        self._bar_color = QtGui.QColor(color)
+        self._spinner.set_bar_color(self._bar_color)
 
     def show_overlay(self, text: str | None = None) -> None:
         """
@@ -233,7 +242,6 @@ class OverlayWidget(QtWidgets.QWidget):
         self.raise_()
         self.show()
 
-
     def hide_overlay(self) -> None:
         """
         Enables the target widget and hides the overlay
@@ -241,3 +249,74 @@ class OverlayWidget(QtWidgets.QWidget):
         self._target.setEnabled(True)
         self.hide()
 
+    text = QtCore.Property(str, get_text, set_text)
+    bg_color = QtCore.Property(QtGui.QColor, get_bg_color, set_bg_color)
+    bar_color = QtCore.Property(QtGui.QColor, get_bar_color, set_bar_color)
+
+
+DOM_XML = """
+<ui language='c++'>
+    <widget class='OverlayWidget' name='overlayWidget'>
+        <property name='text'>
+            <string>Running...</string>
+        </property>
+        <property name='bg_color'>
+            <color>
+                <red>0</red>
+                <green>0</green>
+                <blue>0</blue>
+                <alpha>128</alpha>
+            </color>
+        </property>
+        <property name='bar_color'>
+            <color>
+                <red>100</red>
+                <green>149</green>
+                <blue>237</blue>
+            </color>
+        </property>
+    </widget>
+</ui>
+"""
+
+
+class OverlayWidgetPlugin(QtDesigner.QDesignerCustomWidgetInterface):
+    def __init__(self) -> None:
+        super().__init__()
+        self._initialized = False
+
+    def createWidget(self, parent: QtWidgets.QWidget) -> OverlayWidget:
+        return OverlayWidget(parent=parent)
+
+    def domXml(self) -> str:
+        return DOM_XML
+
+    def group(self) -> str:
+        return ""
+
+    def icon(self) -> QtGui.QIcon:
+        return QtGui.QIcon()
+
+    def includeFile(self) -> str:
+        return "overlay_widget"
+
+    def initialize(self, core: QtDesigner.QDesignerFormEditorInterface) -> None:
+        if self._initialized:
+            return
+
+        self._initialized = True
+
+    def isContainer(self) -> bool:
+        return False
+
+    def isInitialized(self) -> bool:
+        return self._initialized
+
+    def name(self) -> str:
+        return "OverlayWidget"
+
+    def toolTip(self) -> str:
+        return "Can be used to lock the UI while an operation is running"
+
+    def whatsThis(self) -> str:
+        return self.toolTip()

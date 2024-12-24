@@ -2,7 +2,7 @@ import enum
 import typing as t
 from collections.abc import Callable
 
-from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtDesigner, QtGui, QtWidgets
 
 ItemDataRole = QtCore.Qt.ItemDataRole
 
@@ -103,3 +103,53 @@ class EnumComboBox[T: enum.Enum](QtWidgets.QComboBox):
         enum_member = self.current_enum()
         if enum_member is not None:
             self.sig_current_enum_changed.emit(enum_member)
+
+
+DOM_XML = """
+<ui language='c++'>
+    <widget class='EnumComboBox' name='enumComboBox'>
+    </widget>
+</ui>
+"""
+
+
+class EnumComboBoxPlugin(QtDesigner.QDesignerCustomWidgetInterface):
+    def __init__(self) -> None:
+        super().__init__()
+        self._initialized = False
+
+    def createWidget(self, parent: QtWidgets.QWidget) -> QtWidgets.QWidget:
+        return EnumComboBox(parent=parent)
+
+    def domXml(self) -> str:
+        return DOM_XML
+
+    def group(self) -> str:
+        return ""
+
+    def icon(self) -> QtGui.QIcon:
+        return QtGui.QIcon()
+
+    def includeFile(self) -> str:
+        return "enum_combo_box"
+
+    def initialize(self, core: QtDesigner.QDesignerFormEditorInterface) -> None:
+        if self._initialized:
+            return
+
+        self._initialized = True
+
+    def isContainer(self) -> bool:
+        return False
+
+    def isInitialized(self) -> bool:
+        return self._initialized
+
+    def name(self) -> str:
+        return "EnumComboBox"
+
+    def toolTip(self) -> str:
+        return "QComboBox variant that uses a python Enum class to populate the combo box items."
+
+    def whatsThis(self) -> str:
+        return self.toolTip()
