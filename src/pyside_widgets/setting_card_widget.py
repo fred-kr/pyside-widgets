@@ -1,9 +1,32 @@
 import typing as t
 
-from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtDesigner, QtGui, QtWidgets
 
 from ._style_sheets import CARD_STYLE_SHEET
 from ._utils import NOTHING, is_dark_theme
+
+
+class PlaceholderWidget(QtWidgets.QFrame):
+    def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
+        super().__init__(parent)
+
+        self.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
+        self.setFrameShadow(QtWidgets.QFrame.Shadow.Raised)
+        self.setLineWidth(1)
+
+        self.label = QtWidgets.QLabel(self)
+        self.label.setText("Placeholder")
+        self.label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+
+        self._layout = QtWidgets.QVBoxLayout(self)
+        self._layout.setContentsMargins(0, 0, 0, 0)
+        self._layout.setSpacing(0)
+        self._layout.addWidget(self.label)
+
+        self.setLayout(self._layout)
+
+    def setPlaceholderText(self, text: str) -> None:
+        self.label.setText(text)
 
 
 class SettingCard(QtWidgets.QFrame):
@@ -14,51 +37,55 @@ class SettingCard(QtWidgets.QFrame):
     entire `qfluentwidgets` package).
     """
 
-    sig_reset_clicked: t.ClassVar[QtCore.Signal] = QtCore.Signal()
+    sig_reset_clicked = QtCore.Signal()
 
     def __init__(
         self,
-        title: str,
-        editor_widget: QtWidgets.QWidget,
+        title: str = "",
+        editor_widget: QtWidgets.QWidget | None = None,
         default_value: t.Any | None = NOTHING,
         set_value_name: str | None = None,
-        description: str | None = None,
+        description: str = "",
         icon: QtGui.QIcon | None = None,
-        reset_button: bool | QtWidgets.QToolButton = True,
+        reset_button: bool = True,
         parent: QtWidgets.QWidget | None = None,
     ) -> None:
         super().__init__(parent)
 
-        self._title_label = QtWidgets.QLabel(title, self)
-        self._description_label = QtWidgets.QLabel(description or "", self)
-        self._icon_label = QtWidgets.QLabel(self)
-        self.editor_widget = editor_widget
-        self._default_value = default_value
-        self._set_value_name = set_value_name
+        self.p_title = title
+        self.p_description = description
+        self.p_icon = icon or QtGui.QIcon()
+        self.p_icon_size = QtCore.QSize(20, 20)
+        self.p_reset_button = reset_button
 
-        if isinstance(reset_button, QtWidgets.QToolButton):
-            self.btn_reset = reset_button
-        else:
-            self.btn_reset = QtWidgets.QToolButton(self)
-            self.btn_reset.setText("Reset")
-            self.btn_reset.setToolButtonStyle(QtCore.Qt.ToolButtonStyle.ToolButtonTextOnly)
+        self._title_label = QtWidgets.QLabel(self.p_title, self)
+        self._description_label = QtWidgets.QLabel(self.p_description, self)
+        self._icon_label = QtWidgets.QLabel(self)
+        self.editor_widget = editor_widget or PlaceholderWidget()
+        self._default_value = default_value if default_value is not NOTHING else "PlaceholderDefault"
+        self._set_value_name = set_value_name or "setPlaceholderText"
+
+        self.btn_reset = QtWidgets.QPushButton(self)
+        self.btn_reset.setFlat(True)
+        self.btn_reset.setToolTip("Reset to default value")
+        self.btn_reset.setIcon(QtGui.QIcon("://Reset"))
         self.btn_reset.clicked.connect(self._on_reset_clicked)
 
         self.h_layout = QtWidgets.QHBoxLayout(self)
         self.v_layout = QtWidgets.QVBoxLayout()
 
-        if not description:
+        if not self.p_description:
             self._description_label.hide()
 
-        if not icon:
+        if self.p_icon.isNull():
             self._icon_label.hide()
         else:
-            self._icon_label.setPixmap(icon.pixmap(16, 16))
+            self._icon_label.setPixmap(self.p_icon.pixmap(self.p_icon_size))
 
-        if not reset_button:
+        if not self.p_reset_button:
             self.btn_reset.hide()
 
-        self.setFixedHeight(70 if description else 50)
+        self.setFixedHeight(70 if self.p_description else 50)
 
         self.h_layout.setSpacing(0)
         self.h_layout.setContentsMargins(16, 0, 0, 0)
@@ -96,31 +123,44 @@ class SettingCard(QtWidgets.QFrame):
 
         self.setStyleSheet(CARD_STYLE_SHEET)
 
+    def get_title(self) -> str:
+        return self.p_title
+
     def set_title(self, title: str) -> None:
+        self.p_title = title
         self._title_label.setText(title)
 
-    def set_text(self, text: str) -> None:
+    def get_description(self) -> str:
+        return self.p_description
+
+    def set_description(self, text: str) -> None:
+        self.p_description = text
         self._description_label.setText(text)
         self._description_label.setVisible(bool(text))
 
+    def get_icon(self) -> QtGui.QIcon:
+        return self.p_icon
+
     def set_icon(self, icon: QtGui.QIcon) -> None:
-        self._icon_label.setPixmap(icon.pixmap(16, 16))
+        self.p_icon = icon
+        if icon.isNull():
+            self._icon_label.hide()
+            return
+        self._icon_label.setPixmap(icon.pixmap(self.p_icon_size))
+
+    def get_reset_shown(self) -> bool:
+        return self.p_reset_button
+
+    def set_reset_shown(self, shown: bool) -> None:
+        self.p_reset_button = shown
+        self.btn_reset.setVisible(shown)
+
+    def get_icon_size(self) -> QtCore.QSize:
+        return self.p_icon_size
 
     def set_icon_size(self, size: int) -> None:
-        self._icon_label.setFixedSize(size, size)
-
-    def set_reset_button_text(self, text: str) -> None:
-        self.btn_reset.setText(text)
-
-    def set_reset_button_icon(self, icon: QtGui.QIcon) -> None:
-        """
-        Set the icon for the reset button. Has no effect if the button is hidden or its ToolButtonStyle is
-        `ToolButtonTextOnly`.
-
-        Args:
-            icon (QtGui.QIcon): The icon to use.
-        """
-        self.btn_reset.setIcon(icon)
+        self.p_icon_size = QtCore.QSize(size, size)
+        self._icon_label.setPixmap(self.p_icon.pixmap(self.p_icon_size))
 
     def paintEvent(self, arg__1: QtGui.QPaintEvent) -> None:
         painter = QtGui.QPainter(self)
@@ -144,3 +184,81 @@ class SettingCard(QtWidgets.QFrame):
         if self._default_value is NOTHING or not self._set_value_name:
             return
         getattr(self.editor_widget, self._set_value_name)(self._default_value)
+
+    title = QtCore.Property(str, get_title, set_title)
+    description = QtCore.Property(str, get_description, set_description)
+    icon = QtCore.Property(QtGui.QIcon, get_icon, set_icon)
+    reset_shown = QtCore.Property(bool, get_reset_shown, set_reset_shown)
+    icon_size = QtCore.Property(QtCore.QSize, get_icon_size, set_icon_size)
+
+
+DOM_XML = """
+<ui language='c++'>
+    <widget class='SettingCard' name='settingCard'>
+        <property name='title'>
+            <string>Setting Card</string>
+        </property>
+        <property name='description'>
+            <string></string>
+        </property>
+        <property name='icon'>
+            <ResourceIcon resource='icons/ArrowReset.svg'>
+            </ResourceIcon>
+        </property>
+        <property name='reset_shown'>
+            <bool>true</bool>
+        </property>
+        <property name='icon_size'>
+            <size>
+                <width>20</width>
+                <height>20</height>
+            </size>
+        </property>
+    </widget>
+</ui>
+"""
+
+
+class SettingCardPlugin(QtDesigner.QDesignerCustomWidgetInterface):
+    def __init__(self) -> None:
+        super().__init__()
+        self._initialized = False
+
+    def createWidget(self, parent: QtWidgets.QWidget) -> QtWidgets.QWidget:
+        return SettingCard(
+            title="Setting Card",
+            parent=parent,
+        )
+
+    def domXml(self) -> str:
+        return DOM_XML
+
+    def group(self) -> str:
+        return ""
+
+    def icon(self) -> QtGui.QIcon:
+        return QtGui.QIcon()
+
+    def includeFile(self) -> str:
+        return "setting_card_widget"
+
+    def initialize(self, core: QtDesigner.QDesignerFormEditorInterface) -> None:
+        if self._initialized:
+            return
+
+        self._initialized = True
+
+    def isContainer(self) -> bool:
+        return False
+
+    def isInitialized(self) -> bool:
+        return self._initialized
+
+    def name(self) -> str:
+        return "SettingCard"
+
+    def toolTip(self) -> str:
+        return "Widget for displaying and editing a single setting value."
+
+    def whatsThis(self) -> str:
+        return self.toolTip()
