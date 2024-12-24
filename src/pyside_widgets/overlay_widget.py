@@ -261,15 +261,14 @@ DOM_XML = """
             <string>Running...</string>
         </property>
         <property name='bg_color'>
-            <color>
+            <color alpha='128'>
                 <red>0</red>
                 <green>0</green>
                 <blue>0</blue>
-                <alpha>128</alpha>
             </color>
         </property>
         <property name='bar_color'>
-            <color>
+            <color alpha='255'>
                 <red>100</red>
                 <green>149</green>
                 <blue>237</blue>
