@@ -1,5 +1,7 @@
 <RCC>
     <qresource prefix="/">
-        <file>icons/MoreHorizontal.svg</file>
+        <file alias="More">pyside_widgets/icons/MoreHorizontal.svg</file>
+        <file alias="Reset">pyside_widgets/icons/ArrowReset.svg</file>
+        <file alias="Settings">pyside_widgets/icons/Settings.svg</file>
     </qresource>
 </RCC>

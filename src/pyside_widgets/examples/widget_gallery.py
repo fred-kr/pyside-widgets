@@ -85,7 +85,6 @@ def main() -> None:
         lambda: print(f"Selected item: {grouped_combo_box.currentText()}, item data: {grouped_combo_box.currentData()}")
     )
 
-
     grouped_cb_layout.addWidget(grouped_combo_box)
     grouped_cb_layout.addStretch()
     tab_widget.addTab(grouped_cb_container, "GroupedComboBox")
@@ -112,8 +111,8 @@ def main() -> None:
     # EnumComboBox
     enum_cb_container = QtWidgets.QWidget()
     enum_cb_layout = QtWidgets.QVBoxLayout(enum_cb_container)
-    enum_combo_box = EnumComboBox(EnumA)
-    enum_combo_box_2 = EnumComboBox(SettingEnum, allow_none=True)
+    enum_combo_box = EnumComboBox(enum_class=EnumA)
+    enum_combo_box_2 = EnumComboBox(enum_class=SettingEnum, allow_none=True)
 
     btn_change_enum_class = QtWidgets.QPushButton("Change enum class")
     btn_change_enum_class.clicked.connect(lambda: enum_combo_box.set_enum_class(None))
@@ -126,7 +125,7 @@ def main() -> None:
     # SettingCard
     setting_card_container = QtWidgets.QWidget()
     setting_card_layout = QtWidgets.QVBoxLayout(setting_card_container)
-    setting_widget = EnumComboBox(SettingEnum)
+    setting_widget = EnumComboBox(enum_class=SettingEnum)
     setting_card = SettingCard(
         title="Example Setting",
         editor_widget=setting_widget,
@@ -136,8 +135,8 @@ def main() -> None:
         icon=QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.Computer),
         reset_button=True,
     )
-    # setting_card.sig_reset_clicked.connect(lambda: setting_widget.set_current_enum(SettingEnum.DEFAULT))
-    setting_card_layout.addWidget(setting_card)
+
+    setting_card_layout.addWidget(setting_card, 1, alignment=QtCore.Qt.AlignmentFlag.AlignLeft)
     setting_card_layout.addStretch()
     tab_widget.addTab(setting_card_container, "SettingCard")
 
@@ -225,11 +224,15 @@ def main() -> None:
     color_picker_container = QtWidgets.QWidget()
     color_picker_layout = QtWidgets.QVBoxLayout()
     color_picker = ColorPickerButton()
+    color_picker.setFlat(True)
     color_picker.sig_color_changed.connect(lambda color: print(f"Color 1: {color.name()}"))
 
     color_picker2 = ColorPickerButton()
-    color_picker2.set_show_alpha(True)
-    color_picker2.sig_color_changed.connect(lambda color: print(f"Color 2: {color.name()}"))
+    color_picker2.setShowAlphaChannel(True)
+    color_picker2.setShowText(True)
+    color_picker2.sig_color_changed.connect(
+        lambda color: print(f"Color 2: {color.name(QtGui.QColor.NameFormat.HexArgb)}")
+    )
 
     btn_set_invalid_color = QtWidgets.QPushButton("Set Invalid Color")
     btn_set_invalid_color.clicked.connect(lambda: color_picker.set_color(QtGui.QColor("invalid_color")))
@@ -261,7 +264,7 @@ def main() -> None:
     command_bar_container = QtWidgets.QWidget()
     command_bar_layout = QtWidgets.QVBoxLayout()
     command_bar = CommandBar()
-    action1 = QtGui.QAction(QtGui.QIcon("src/icons/MoreHorizontal.svg"), "Action 1")
+    action1 = QtGui.QAction(QtGui.QIcon("://More"), "Action 1")
     action2 = QtGui.QAction("Action 2")
     action3 = QtGui.QAction("Action 3")
     hidden_action = QtGui.QAction("Hidden Action")

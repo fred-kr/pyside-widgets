@@ -201,15 +201,10 @@ class MoreActionsButton(CommandButton):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
 
-        self.setIcon(QtGui.QIcon("://icons/MoreHorizontal.svg"))
+        self.setIcon(QtGui.QIcon("://More"))
 
     def sizeHint(self) -> QtCore.QSize:
         return QtCore.QSize(40, 34)
-
-    # def clearState(self) -> None:
-    #     self.setAttribute(QtCore.Qt.WidgetAttribute.WA_UnderMouse, False)
-    #     e = QtGui.QHoverEvent(QtCore.QEvent.Type.HoverLeave, QtCore.QPoint(-1, -1), QtCore.QPoint())
-    #     QtWidgets.QApplication.sendEvent(self, e)
 
 
 class CommandSeparator(QtWidgets.QWidget):

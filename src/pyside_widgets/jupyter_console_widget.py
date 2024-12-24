@@ -32,9 +32,9 @@ class JupyterConsoleWidget(inprocess.QtInProcessRichJupyterWidget):
 class JupyterConsoleWindow(QtWidgets.QWidget):
     def __init__(
         self,
+        parent: QtWidgets.QWidget | None = None,
         namespace: dict[str, t.Any] | None = None,
         style: t.Literal["lightbg", "linux", "nocolor"] = "linux",
-        parent: QtWidgets.QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         namespace = namespace or {}

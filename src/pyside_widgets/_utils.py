@@ -33,8 +33,21 @@ def set_font(
     widget: QtWidgets.QWidget | QtGui.QStandardItem,
     font_size: int = 14,
     weight: QtGui.QFont.Weight = QtGui.QFont.Weight.Normal,
+    family: str = "Segoe UI",
 ) -> None:
     font = widget.font()
     font.setPointSize(font_size)
     font.setWeight(weight)
+    font.setFamily(family)
     widget.setFont(font)
+
+
+def get_text_color(background_color: QtGui.QColor) -> QtGui.QColor:
+    """
+    Determines an appropriate text color (black or white) that contrasts well with the given background color.
+    """
+    luminance = (
+        (background_color.red() * 299) + (background_color.green() * 587) + (background_color.blue() * 114)
+    ) // 1000
+
+    return QtGui.QColor(255, 255, 255) if luminance < 128 else QtGui.QColor(0, 0, 0)

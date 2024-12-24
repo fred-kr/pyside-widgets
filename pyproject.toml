@@ -54,14 +54,4 @@ typeCheckingMode = "strict"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.hatch.build.targets.wheel]
-only-include = ["src/pyside_widgets", "src/examples", "src/icons", "src/registrars"]
 
-[tool.hatch.build.targets.wheel.sources]
-"src" = ""
-
-[tool.hatch.build.targets.sdist]
-only-include = ["src/pyside_widgets", "src/examples", "src/icons", "src/registrars"]
-
-[tool.hatch.build.targets.sdist.sources]
-"src" = ""

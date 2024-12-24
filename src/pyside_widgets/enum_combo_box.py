@@ -21,9 +21,9 @@ class EnumComboBox[T: enum.Enum](QtWidgets.QComboBox):
 
     def __init__(
         self,
+        parent: QtWidgets.QWidget | None = None,
         enum_class: type[T] | None = None,
         allow_none: bool = False,
-        parent: QtWidgets.QWidget | None = None,
     ) -> None:
         super().__init__(parent)
 

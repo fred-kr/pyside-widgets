@@ -232,7 +232,7 @@ class DataTreeWidget(QtWidgets.QTreeWidget):
 
 
 class SearchableDataTreeWidget(QtWidgets.QWidget):
-    def __init__(self, allow_edit: bool = False, parent: QtWidgets.QWidget | None = None) -> None:
+    def __init__(self, parent: QtWidgets.QWidget | None = None, allow_edit: bool = False) -> None:
         super().__init__(parent)
         layout = QtWidgets.QVBoxLayout()
 

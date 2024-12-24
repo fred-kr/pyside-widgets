@@ -100,10 +100,10 @@ class LabeledSlider(QtWidgets.QWidget):
 
     def __init__(
         self,
+        parent: QtWidgets.QWidget | None = None,
         title: str = "",
         title_pos: TitleLabelPosition = TitleLabelPosition.TOP_LEFT,
         show_min_max: bool = True,
-        parent: QtWidgets.QWidget | None = None,
     ) -> None:
         super().__init__(parent)
 
