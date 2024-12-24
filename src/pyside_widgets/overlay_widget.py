@@ -249,6 +249,13 @@ class OverlayWidget(QtWidgets.QWidget):
         self._target.setEnabled(True)
         self.hide()
 
+    @QtCore.Slot(bool)
+    def toggle_overlay(self, visible: bool) -> None:
+        if visible:
+            self.show_overlay()
+        else:
+            self.hide_overlay()
+
     text = QtCore.Property(str, get_text, set_text)
     bg_color = QtCore.Property(QtGui.QColor, get_bg_color, set_bg_color)
     bar_color = QtCore.Property(QtGui.QColor, get_bar_color, set_bar_color)
