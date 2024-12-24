@@ -168,9 +168,6 @@ class AnimatedToggle(Toggle):
 DOM_XML = """
 <ui language='c++'>
     <widget class='Toggle' name='toggle'>
-        <property name='handle_position'>
-            <float>0</float>
-        </property>
     </widget>
 </ui>
 """
