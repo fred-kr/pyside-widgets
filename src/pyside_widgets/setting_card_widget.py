@@ -18,9 +18,7 @@ class PlaceholderWidget(QtWidgets.QFrame):
         self.label.setText("Placeholder")
         self.label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
 
-        self._layout = QtWidgets.QVBoxLayout(self)
-        self._layout.setContentsMargins(0, 0, 0, 0)
-        self._layout.setSpacing(0)
+        self._layout = QtWidgets.QVBoxLayout()
         self._layout.addWidget(self.label)
 
         self.setLayout(self._layout)
@@ -55,14 +53,14 @@ class SettingCard(QtWidgets.QFrame):
         self.p_title = title
         self.p_description = description
         self.p_icon = icon or QtGui.QIcon()
-        self.p_icon_size = QtCore.QSize(20, 20)
+        self.p_icon_size = QtCore.QSize(16, 16)
         self.p_reset_button = reset_button
 
         self._title_label = QtWidgets.QLabel(self.p_title, self)
         self._description_label = QtWidgets.QLabel(self.p_description, self)
         self._icon_label = QtWidgets.QLabel(self)
         self.editor_widget = editor_widget or PlaceholderWidget()
-        self._default_value = default_value if default_value is not NOTHING else "PlaceholderDefault"
+        self._default_value = default_value if default_value is not NOTHING else "Default Value"
         self._set_value_name = set_value_name or "setPlaceholderText"
 
         self.btn_reset = QtWidgets.QPushButton(self)
@@ -89,7 +87,7 @@ class SettingCard(QtWidgets.QFrame):
 
         self.h_layout.setSpacing(0)
         self.h_layout.setContentsMargins(16, 0, 0, 0)
-        self.h_layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignVCenter)
+        self.h_layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
 
         self.v_layout.setSpacing(0)
         self.v_layout.setContentsMargins(0, 0, 0, 0)
@@ -135,6 +133,10 @@ class SettingCard(QtWidgets.QFrame):
 
     def set_description(self, text: str) -> None:
         self.p_description = text
+        if text:
+            self.setFixedHeight(70)
+        else:
+            self.setFixedHeight(50)
         self._description_label.setText(text)
         self._description_label.setVisible(bool(text))
 
@@ -160,7 +162,7 @@ class SettingCard(QtWidgets.QFrame):
 
     def set_icon_size(self, size: int) -> None:
         self.p_icon_size = QtCore.QSize(size, size)
-        self._icon_label.setPixmap(self.p_icon.pixmap(self.p_icon_size))
+        self._icon_label.setFixedSize(self.p_icon_size)
 
     def paintEvent(self, arg__1: QtGui.QPaintEvent) -> None:
         painter = QtGui.QPainter(self)
@@ -192,7 +194,7 @@ class SettingCard(QtWidgets.QFrame):
     icon_size = QtCore.Property(QtCore.QSize, get_icon_size, set_icon_size)
 
 
-DOM_XML = """
+DOM_XML = f"""
 <ui language='c++'>
     <widget class='SettingCard' name='settingCard'>
         <property name='title'>
@@ -202,17 +204,22 @@ DOM_XML = """
             <string></string>
         </property>
         <property name='icon'>
-            <ResourceIcon resource='icons/ArrowReset.svg'>
-            </ResourceIcon>
+            <iconset>
+                <normaloff>icons/ArrowReset.svg</normaloff>icons/ArrowReset.svg
+            </iconset>
         </property>
         <property name='reset_shown'>
             <bool>true</bool>
         </property>
         <property name='icon_size'>
             <size>
-                <width>20</width>
-                <height>20</height>
+                <width>16</width>
+                <height>16</height>
             </size>
+        </property>
+        <property name='styleSheet'>
+            <string notr='true'>{CARD_STYLE_SHEET}
+            </string>
         </property>
     </widget>
 </ui>

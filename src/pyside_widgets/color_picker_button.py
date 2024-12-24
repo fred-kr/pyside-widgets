@@ -16,7 +16,7 @@ class ColorPickerButton(QtWidgets.QPushButton):
         color: QtGui.QColor | None = None,
         show_alpha: bool = False,
         show_icon: bool = True,
-        show_text: bool = False,
+        show_text: bool = True,
     ) -> None:
         super().__init__(parent)
 

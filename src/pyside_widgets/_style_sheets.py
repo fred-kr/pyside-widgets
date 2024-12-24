@@ -1,6 +1,5 @@
 # Style sheet retrieved by calling `qfluentwidgets.SettingCard.styleSheet()`
-CARD_STYLE_SHEET = """
-QLabel {
+CARD_STYLE_SHEET = """QLabel {
     font: 14px 'Segoe UI', 'Microsoft YaHei', 'PingFang SC';
     color: black;
     padding: 0;
@@ -14,18 +13,10 @@ QLabel#textLabel {
     padding: 0;
 }
 
-RangeSettingCard > QLabel#valueLabel{
-    color: rgb(96, 96, 96);
-}
-
 QLabel:disabled,
-QLabel#textLabel:disabled,
-RangeSettingCard>QLabel#valueLabel:disabled {
+QLabel#textLabel:disabled {
     color: rgba(0, 0, 0, 0.36);
-}
-
-
-"""
+}"""
 # QPushButton {
 #     border: 1px solid rgba(0, 0, 0, 0.073);
 #     border-radius: 5px;
