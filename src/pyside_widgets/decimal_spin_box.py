@@ -243,7 +243,7 @@ class DecimalSpinBoxPlugin(QtDesigner.QDesignerCustomWidgetInterface):
     def initialize(self, core: QtDesigner.QDesignerFormEditorInterface) -> None:
         if self._initialized:
             return
-
+        
         self._initialized = True
 
     def isContainer(self) -> bool:
@@ -260,3 +260,26 @@ class DecimalSpinBoxPlugin(QtDesigner.QDesignerCustomWidgetInterface):
 
     def whatsThis(self) -> str:
         return self.toolTip()
+
+
+class DecimalSpinBoxPropertySheet(QtDesigner.QDesignerPropertySheetExtension):
+    def __init__(self, widget: DecimalSpinBox, parent: QtCore.QObject) -> None:
+        super().__init__()
+        self._dec_spin_box = widget
+        self.
+
+class DecimalSpinBoxPropertySheetFactory(QtDesigner.QExtensionFactory):
+    def __init__(self, extension_manager: QtDesigner.QExtensionManager) -> None:
+        super().__init__(extension_manager)
+
+    @staticmethod
+    def property_sheet_iid() -> str:
+        return "org.qt-project.Qt.Designer.PropertySheet"
+
+    def createExtension(self, obj: DecimalSpinBox, iid: str, parent: QtCore.QObject) -> "DecimalSpinBoxPropertySheet | None":
+        if iid != DecimalSpinBoxPropertySheetFactory.property_sheet_iid():
+            return None
+        if obj.__class__.__name__ != "DecimalSpinBox":
+            return None
+        return DecimalSpinBoxPropertySheet(obj, parent)
+        
