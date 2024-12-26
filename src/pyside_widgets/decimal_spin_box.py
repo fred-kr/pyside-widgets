@@ -14,10 +14,10 @@ class DecimalSpinBox(QtWidgets.QAbstractSpinBox):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
         self._decimal_places: int = 2
-        self._value: decimal.Decimal = D("0.00")
+        self._value: decimal.Decimal = D("1.00")
         self._single_step: decimal.Decimal = D("1.00")
-        self._minimum: decimal.Decimal = D("-9999999.99")
-        self._maximum: decimal.Decimal = D("9999999.99")
+        self._minimum: decimal.Decimal = D("0.00")
+        self._maximum: decimal.Decimal = D("99.99")
         self._prefix: str = ""
         self._suffix: str = ""
         self.setDecimals(self._decimal_places)
@@ -39,6 +39,10 @@ class DecimalSpinBox(QtWidgets.QAbstractSpinBox):
         """Returns the current minimum value."""
         return self._minimum
 
+    def f_minimum(self) -> float:
+        """Convenience method to return the minimum value as a float."""
+        return float(self._minimum)
+
     def setMinimum(self, min: _TSupportsDecimal) -> None:
         """Sets the minimum value."""
         self._minimum = D(min)
@@ -47,6 +51,10 @@ class DecimalSpinBox(QtWidgets.QAbstractSpinBox):
     def maximum(self) -> decimal.Decimal:
         """Returns the current maximum value."""
         return self._maximum
+
+    def f_maximum(self) -> float:
+        """Convenience method to return the maximum value as a float."""
+        return float(self._maximum)
 
     def setMaximum(self, max: _TSupportsDecimal) -> None:
         """Sets the maximum value."""
@@ -66,6 +74,10 @@ class DecimalSpinBox(QtWidgets.QAbstractSpinBox):
     def singleStep(self) -> decimal.Decimal:
         """Returns the step size for each increment/decrement."""
         return self._single_step
+
+    def f_singleStep(self) -> float:
+        """Convenience method to return the step size as a float."""
+        return float(self._single_step)
 
     def setSingleStep(self, val: _TSupportsDecimal) -> None:
         """Sets the step size for each increment/decrement."""
@@ -171,38 +183,37 @@ class DecimalSpinBox(QtWidgets.QAbstractSpinBox):
         return D(text)
 
     decimals = QtCore.Property(int, setDecimals, decimals)
-    minimum = QtCore.Property(float, setMinimum, minimum)
-    maximum = QtCore.Property(float, setMaximum, maximum)
-    range = QtCore.Property(tuple, setRange, range)
-    singleStep = QtCore.Property(float, setSingleStep, singleStep)
+    f_minimum = QtCore.Property(float, setMinimum, f_minimum)
+    f_maximum = QtCore.Property(float, setMaximum, f_maximum)
+    f_singleStep = QtCore.Property(float, setSingleStep, f_singleStep)
     prefix = QtCore.Property(str, setPrefix, prefix)
     suffix = QtCore.Property(str, setSuffix, suffix)
-    value = QtCore.Property(float, setValue, value)
+    floatValue = QtCore.Property(float, setValue, floatValue)
 
 
 DOM_XML = """
 <ui language='c++'>
     <widget class='DecimalSpinBox' name='decimalSpinBox'>
         <property name='decimals'>
-            <int>2</int>
+            <number>2</number>
         </property>
-        <property name='minimum'>
-            <double>0.0</double>
+        <property name='f_minimum'>
+            <double>0.00</double>
         </property>
-        <property name='maximum'>
-            <double>1.0</double>
+        <property name='f_maximum'>
+            <double>99.99</double>
         </property>
-        <property name='singleStep'>
+        <property name='f_singleStep'>
             <double>0.01</double>
         </property>
         <property name='prefix'>
-            <string>Prefix</string>
+            <string></string>
         </property>
         <property name='suffix'>
-            <string>Suffix</string>
+            <string></string>
         </property>
-        <property name='value'>
-            <double>0.0</double>
+        <property name='floatValue'>
+            <double>1.00</double>
         </property>
     </widget>
 </ui>
