@@ -15,7 +15,7 @@ class DecimalSpinBox(QtWidgets.QAbstractSpinBox):
         super().__init__(parent)
         self._decimal_places: int = 2
         self._value: decimal.Decimal = D("0.00")
-        self._step: decimal.Decimal = D("1.00")
+        self._single_step: decimal.Decimal = D("1.00")
         self._minimum: decimal.Decimal = D("-9999999.99")
         self._maximum: decimal.Decimal = D("9999999.99")
         self._prefix: str = ""
@@ -30,6 +30,10 @@ class DecimalSpinBox(QtWidgets.QAbstractSpinBox):
         """Sets the number of decimal places to display."""
         self._decimal_places = prec
         self._updateDisplay()
+
+    def decimals(self) -> int:
+        """Getter of property `decimals`."""
+        return self._decimal_places
 
     def minimum(self) -> decimal.Decimal:
         """Returns the current minimum value."""
@@ -59,14 +63,26 @@ class DecimalSpinBox(QtWidgets.QAbstractSpinBox):
         self._maximum = D(max)
         self._updateDisplay()
 
+    def singleStep(self) -> decimal.Decimal:
+        """Returns the step size for each increment/decrement."""
+        return self._single_step
+
     def setSingleStep(self, val: _TSupportsDecimal) -> None:
         """Sets the step size for each increment/decrement."""
-        self._step = D(val)
+        self._single_step = D(val)
+
+    def prefix(self) -> str:
+        """Getter of property `prefix`."""
+        return self._prefix
 
     def setPrefix(self, prefix: str) -> None:
         """Set the prefix to display before the value."""
         self._prefix = prefix
         self._updateDisplay()
+
+    def suffix(self) -> str:
+        """Getter of property `suffix`."""
+        return self._suffix
 
     def setSuffix(self, suffix: str) -> None:
         """Set the suffix to display after the value."""
@@ -100,7 +116,7 @@ class DecimalSpinBox(QtWidgets.QAbstractSpinBox):
 
     def stepBy(self, steps: int) -> None:
         """Handles stepping the value up or down by the defined step size."""
-        new_value = self._value + (self._step * steps)
+        new_value = self._value + (self._single_step * steps)
         self.setValue(new_value)
 
     @QtCore.Slot()
@@ -154,10 +170,40 @@ class DecimalSpinBox(QtWidgets.QAbstractSpinBox):
         """Returns the value represented by the given text."""
         return D(text)
 
+    decimals = QtCore.Property(int, setDecimals, decimals)
+    minimum = QtCore.Property(float, setMinimum, minimum)
+    maximum = QtCore.Property(float, setMaximum, maximum)
+    range = QtCore.Property(tuple, setRange, range)
+    singleStep = QtCore.Property(float, setSingleStep, singleStep)
+    prefix = QtCore.Property(str, setPrefix, prefix)
+    suffix = QtCore.Property(str, setSuffix, suffix)
+    value = QtCore.Property(float, setValue, value)
+
 
 DOM_XML = """
 <ui language='c++'>
     <widget class='DecimalSpinBox' name='decimalSpinBox'>
+        <property name='decimals'>
+            <int>2</int>
+        </property>
+        <property name='minimum'>
+            <double>0.0</double>
+        </property>
+        <property name='maximum'>
+            <double>1.0</double>
+        </property>
+        <property name='singleStep'>
+            <double>0.01</double>
+        </property>
+        <property name='prefix'>
+            <string>Prefix</string>
+        </property>
+        <property name='suffix'>
+            <string>Suffix</string>
+        </property>
+        <property name='value'>
+            <double>0.0</double>
+        </property>
     </widget>
 </ui>
 """
