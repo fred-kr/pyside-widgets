@@ -3,10 +3,10 @@ name = "pyside-widgets"
 version = "0.2.1"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 dependencies = [
     "darkdetect>=0.8.0",
-    "numpy>=2.2.0",
+    "numpy>=2.2.1",
     "pyqtgraph>=0.13.7",
     "pyside6==6.8.1",
     "qtconsole>=5.6.1",
@@ -18,7 +18,7 @@ dev-dependencies = [
     "pytest-qt>=4.4.0",
     "pytest>=8.3.4",
     "rich>=13.9.4",
-    "ruff>=0.8.4",
+    "ruff>=0.9.2",
 ]
 
 
@@ -26,7 +26,7 @@ dev-dependencies = [
 pyqtgraph = { git = "https://github.com/pyqtgraph/pyqtgraph.git" }
 
 [tool.ruff]
-target-version = "py312"
+target-version = "py313"
 show-fixes = true
 output-format = "concise"
 line-length = 120
@@ -34,17 +34,13 @@ line-length = 120
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
 
-[tool.ruff.lint]
-ignore = ["E501"]
-select = ["E", "F", "B"]
-
 [tool.pytest.ini_options]
 addopts = [
     "--import-mode=importlib",
 ]
 
 [tool.pyright]
-pythonVersion = "3.12"
+pythonVersion = "3.13"
 reportMissingTypeStubs = false
 reportUnknownMemberType = false
 reportUnknownLambdaType = false

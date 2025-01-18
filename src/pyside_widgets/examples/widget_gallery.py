@@ -3,6 +3,7 @@ import types
 
 import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
+import pyqtgraph as pg
 
 from pyside_widgets import (
     AnimatedToggle,
@@ -201,6 +202,26 @@ def main() -> None:
     decimal_spin_box_container.setLayout(decimal_spin_box_layout)
 
     tab_widget.addTab(decimal_spin_box_container, "DecimalSpinBox")
+
+    # pyqtgraph.SpinBox
+    spin_box_container = QtWidgets.QWidget()
+    spin_box_layout = QtWidgets.QVBoxLayout()
+    spin_box = pg.SpinBox(compactHeight=False)
+    spin_box.setRange(-1_000, 1_000)
+    spin_box.setSingleStep(10)
+    spin_box.setValue(50)
+
+    output = QtWidgets.QTextEdit()
+    output.setReadOnly(True)
+
+    spin_box.valueChanged.connect(lambda value: output.append(str(value)))
+
+    spin_box_layout.addWidget(spin_box)
+    spin_box_layout.addWidget(output)
+    spin_box_layout.addStretch()
+    spin_box_container.setLayout(spin_box_layout)
+
+    tab_widget.addTab(spin_box_container, "pyqtgraph.SpinBox")
 
     # LabeledSlider
     labeled_slider_container = QtWidgets.QWidget()

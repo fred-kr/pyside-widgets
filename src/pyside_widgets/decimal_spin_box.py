@@ -8,8 +8,8 @@ type _TSupportsDecimal = decimal.Decimal | float | str | tuple[int, t.Sequence[i
 
 
 class DecimalSpinBox(QtWidgets.QAbstractSpinBox):
-    valueChanged: t.ClassVar[QtCore.Signal] = QtCore.Signal(decimal.Decimal)
-    textChanged: t.ClassVar[QtCore.Signal] = QtCore.Signal(str)
+    valueChanged = QtCore.Signal(decimal.Decimal)
+    textChanged = QtCore.Signal(str)
 
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
@@ -182,39 +182,11 @@ class DecimalSpinBox(QtWidgets.QAbstractSpinBox):
         """Returns the value represented by the given text."""
         return D(text)
 
-    decimals = QtCore.Property(int, setDecimals, decimals)
-    f_minimum = QtCore.Property(float, setMinimum, f_minimum)
-    f_maximum = QtCore.Property(float, setMaximum, f_maximum)
-    f_singleStep = QtCore.Property(float, setSingleStep, f_singleStep)
-    prefix = QtCore.Property(str, setPrefix, prefix)
-    suffix = QtCore.Property(str, setSuffix, suffix)
-    floatValue = QtCore.Property(float, setValue, floatValue)
-
 
 DOM_XML = """
 <ui language='c++'>
     <widget class='DecimalSpinBox' name='decimalSpinBox'>
-        <property name='decimals'>
-            <number>2</number>
-        </property>
-        <property name='f_minimum'>
-            <double>0.00</double>
-        </property>
-        <property name='f_maximum'>
-            <double>99.99</double>
-        </property>
-        <property name='f_singleStep'>
-            <double>0.01</double>
-        </property>
-        <property name='prefix'>
-            <string></string>
-        </property>
-        <property name='suffix'>
-            <string></string>
-        </property>
-        <property name='floatValue'>
-            <double>1.00</double>
-        </property>
+
     </widget>
 </ui>
 """
@@ -243,7 +215,7 @@ class DecimalSpinBoxPlugin(QtDesigner.QDesignerCustomWidgetInterface):
     def initialize(self, core: QtDesigner.QDesignerFormEditorInterface) -> None:
         if self._initialized:
             return
-        
+
         self._initialized = True
 
     def isContainer(self) -> bool:
@@ -260,26 +232,3 @@ class DecimalSpinBoxPlugin(QtDesigner.QDesignerCustomWidgetInterface):
 
     def whatsThis(self) -> str:
         return self.toolTip()
-
-
-class DecimalSpinBoxPropertySheet(QtDesigner.QDesignerPropertySheetExtension):
-    def __init__(self, widget: DecimalSpinBox, parent: QtCore.QObject) -> None:
-        super().__init__()
-        self._dec_spin_box = widget
-        self.
-
-class DecimalSpinBoxPropertySheetFactory(QtDesigner.QExtensionFactory):
-    def __init__(self, extension_manager: QtDesigner.QExtensionManager) -> None:
-        super().__init__(extension_manager)
-
-    @staticmethod
-    def property_sheet_iid() -> str:
-        return "org.qt-project.Qt.Designer.PropertySheet"
-
-    def createExtension(self, obj: DecimalSpinBox, iid: str, parent: QtCore.QObject) -> "DecimalSpinBoxPropertySheet | None":
-        if iid != DecimalSpinBoxPropertySheetFactory.property_sheet_iid():
-            return None
-        if obj.__class__.__name__ != "DecimalSpinBox":
-            return None
-        return DecimalSpinBoxPropertySheet(obj, parent)
-        
