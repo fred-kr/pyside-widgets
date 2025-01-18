@@ -3,7 +3,7 @@ from PySide6 import QtCore, QtDesigner, QtGui, QtWidgets
 type ColorLike = QtCore.Qt.GlobalColor | QtGui.QColor | str
 
 
-class Toggle(QtWidgets.QCheckBox):
+class ToggleSwitch(QtWidgets.QCheckBox):
     _transparent_pen = QtGui.QPen(QtCore.Qt.GlobalColor.transparent)
     _light_gray_pen = QtGui.QPen(QtCore.Qt.GlobalColor.lightGray)
 
@@ -88,7 +88,7 @@ class Toggle(QtWidgets.QCheckBox):
         self.update()
 
 
-class AnimatedToggle(Toggle):
+class AnimatedToggleSwitch(ToggleSwitch):
     _transparent_pen = QtGui.QPen(QtCore.Qt.GlobalColor.transparent)
     _light_gray_pen = QtGui.QPen(QtCore.Qt.GlobalColor.lightGray)
 
@@ -167,19 +167,19 @@ class AnimatedToggle(Toggle):
 
 DOM_XML = """
 <ui language='c++'>
-    <widget class='Toggle' name='toggle'>
+    <widget class='ToggleSwitch' name='toggleSwitch'>
     </widget>
 </ui>
 """
 
 
-class TogglePlugin(QtDesigner.QDesignerCustomWidgetInterface):
+class ToggleSwitchPlugin(QtDesigner.QDesignerCustomWidgetInterface):
     def __init__(self) -> None:
         super().__init__()
         self._initialized = False
 
-    def createWidget(self, parent: QtWidgets.QWidget) -> Toggle:
-        return Toggle(parent=parent)
+    def createWidget(self, parent: QtWidgets.QWidget) -> ToggleSwitch:
+        return ToggleSwitch(parent=parent)
 
     def domXml(self) -> str:
         return DOM_XML
@@ -191,7 +191,7 @@ class TogglePlugin(QtDesigner.QDesignerCustomWidgetInterface):
         return QtGui.QIcon()
 
     def includeFile(self) -> str:
-        return "toggle_switch"
+        return __name__
 
     def initialize(self, core: QtDesigner.QDesignerFormEditorInterface) -> None:
         if self._initialized:
@@ -206,7 +206,7 @@ class TogglePlugin(QtDesigner.QDesignerCustomWidgetInterface):
         return self._initialized
 
     def name(self) -> str:
-        return "Toggle"
+        return "ToggleSwitch"
 
     def toolTip(self) -> str:
         return "QCheckBox displayed as a toggle switch"

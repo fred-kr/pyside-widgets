@@ -247,7 +247,7 @@ class SettingCardPlugin(QtDesigner.QDesignerCustomWidgetInterface):
         return QtGui.QIcon()
 
     def includeFile(self) -> str:
-        return "setting_card_widget"
+        return __name__
 
     def initialize(self, core: QtDesigner.QDesignerFormEditorInterface) -> None:
         if self._initialized:

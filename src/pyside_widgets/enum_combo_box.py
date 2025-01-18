@@ -16,7 +16,6 @@ class EnumComboBox[T: enum.Enum](QtWidgets.QComboBox):
 
     Inspired by [`superqt.QEnumComboBox`](https://pyapp-kit.github.io/superqt/widgets/qenumcombobox/#qenumcombobox).
     """
-
     sig_current_enum_changed = QtCore.Signal(enum.Enum)
 
     def __init__(
@@ -119,7 +118,7 @@ class EnumComboBoxPlugin(QtDesigner.QDesignerCustomWidgetInterface):
         self._initialized = False
 
     def createWidget(self, parent: QtWidgets.QWidget) -> QtWidgets.QWidget:
-        return EnumComboBox(parent=parent)
+        return EnumComboBox(parent=parent, enum_class=None, allow_none=True)
 
     def domXml(self) -> str:
         return DOM_XML
@@ -131,7 +130,7 @@ class EnumComboBoxPlugin(QtDesigner.QDesignerCustomWidgetInterface):
         return QtGui.QIcon()
 
     def includeFile(self) -> str:
-        return "enum_combo_box"
+        return __name__
 
     def initialize(self, core: QtDesigner.QDesignerFormEditorInterface) -> None:
         if self._initialized:

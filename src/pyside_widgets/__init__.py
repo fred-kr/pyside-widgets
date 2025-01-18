@@ -8,7 +8,7 @@ from pyside_widgets.jupyter_console_widget import JupyterConsoleWindow
 from pyside_widgets.labeled_slider import LabeledSlider
 from pyside_widgets.overlay_widget import OverlayWidget
 from pyside_widgets.setting_card_widget import SettingCard
-from pyside_widgets.toggle_switch import AnimatedToggle, Toggle
+from pyside_widgets.toggle_switch import AnimatedToggleSwitch, ToggleSwitch
 
 __all__ = [
     "GroupedComboBox",
@@ -21,7 +21,7 @@ __all__ = [
     "DecimalSpinBox",
     "LabeledSlider",
     "ColorPickerButton",
-    "AnimatedToggle",
-    "Toggle",
+    "AnimatedToggleSwitch",
+    "ToggleSwitch",
     "CommandBar",
 ]

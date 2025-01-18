@@ -2,11 +2,11 @@ import enum
 import types
 
 import numpy as np
-from PySide6 import QtCore, QtGui, QtWidgets
 import pyqtgraph as pg
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from pyside_widgets import (
-    AnimatedToggle,
+    AnimatedToggleSwitch,
     ColorPickerButton,
     CommandBar,
     DataTreeWidget,
@@ -18,7 +18,7 @@ from pyside_widgets import (
     OverlayWidget,
     SearchableDataTreeWidget,
     SettingCard,
-    Toggle,
+    ToggleSwitch,
 )
 
 
@@ -270,8 +270,8 @@ def main() -> None:
     toggle_button_container = QtWidgets.QWidget()
     toggle_button_layout = QtWidgets.QVBoxLayout()
 
-    toggle = Toggle()
-    toggle_button = AnimatedToggle(checked_color="#1abc9c", pulse_checked_color="#4400B0EE")
+    toggle = ToggleSwitch()
+    toggle_button = AnimatedToggleSwitch(checked_color="#1abc9c", pulse_checked_color="#4400B0EE")
 
     toggle_button_layout.addWidget(toggle)
     toggle_button_layout.addWidget(toggle_button)

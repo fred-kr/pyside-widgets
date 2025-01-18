@@ -150,7 +150,7 @@ class ColorPickerButtonPlugin(QtDesigner.QDesignerCustomWidgetInterface):
         return QtGui.QIcon()
 
     def includeFile(self) -> str:
-        return "color_picker_button"
+        return __name__
 
     def initialize(self, core: QtDesigner.QDesignerFormEditorInterface) -> None:
         if self._initialized:

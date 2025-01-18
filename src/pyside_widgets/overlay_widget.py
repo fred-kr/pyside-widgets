@@ -304,7 +304,7 @@ class OverlayWidgetPlugin(QtDesigner.QDesignerCustomWidgetInterface):
         return QtGui.QIcon()
 
     def includeFile(self) -> str:
-        return "overlay_widget"
+        return __name__
 
     def initialize(self, core: QtDesigner.QDesignerFormEditorInterface) -> None:
         if self._initialized:
