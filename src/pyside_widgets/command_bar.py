@@ -1,17 +1,5 @@
 from PySide6 import QtCore, QtGui, QtWidgets
 
-import pyside_widgets.rc_resources  # noqa: F401  # type: ignore
-
-
-def draw_icon(
-    icon: QtGui.QIcon | QtGui.QPixmap,
-    painter: QtGui.QPainter,
-    rect: QtCore.QRectF,
-    state: QtGui.QIcon.State = QtGui.QIcon.State.Off,
-) -> None:
-    icon = QtGui.QIcon(icon)
-    icon.paint(painter, QtCore.QRectF(rect).toRect(), QtCore.Qt.AlignmentFlag.AlignCenter, state=state)
-
 
 class CommandBar(QtWidgets.QToolBar):
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
