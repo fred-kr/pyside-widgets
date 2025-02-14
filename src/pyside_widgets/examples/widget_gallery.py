@@ -297,7 +297,6 @@ def main() -> None:
     command_bar.addActions([action1, action2])
     command_bar.addSeparator()
     command_bar.addAction(action3)
-    command_bar.addHiddenAction(hidden_action)
 
     command_bar_layout.addWidget(command_bar)
     command_bar_layout.addStretch()
