@@ -23,7 +23,8 @@ dev-dependencies = [
 
 
 [tool.uv.sources]
-pyqtgraph = { git = "https://github.com/pyqtgraph/pyqtgraph.git" }
+pyqtgraph = { git = "https://github.com/pyqtgraph/pyqtgraph", rev = "master" }
+
 
 [tool.ruff]
 target-version = "py313"
