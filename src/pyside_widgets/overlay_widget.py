@@ -149,7 +149,7 @@ class OverlayWidget(QtWidgets.QWidget):
         self._bar_color = QtGui.QColor("cornflowerblue")
 
         self._container = QtWidgets.QWidget(self)
-        self._container.setStyleSheet(f"background: {self._bg_color.name()};")
+        self._container.setStyleSheet("background: rgba(0, 0, 0, 128);")
 
         self._layout = QtWidgets.QVBoxLayout(self._container)
         self._layout.setContentsMargins(0, 0, 0, 0)
@@ -201,7 +201,8 @@ class OverlayWidget(QtWidgets.QWidget):
             color (ColorLike): The color to set the background to
         """
         self._bg_color = QtGui.QColor(color)
-        self._container.setStyleSheet(f"background: {self._bg_color.name()};")
+        r, g, b, a = self._bg_color.red(), self._bg_color.green(), self._bg_color.blue(), self._bg_color.alpha()
+        self._container.setStyleSheet(f"background: rgba({r}, {g}, {b}, {a});")
 
     def get_text(self) -> str:
         return self._text.text()

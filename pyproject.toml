@@ -18,7 +18,7 @@ dev-dependencies = [
     "pytest-qt>=4.4.0",
     "pytest>=8.3.5",
     "rich>=14.0.0",
-    "ruff>=0.11.4",
+    "ruff>=0.11.5",
 ]
 
 
