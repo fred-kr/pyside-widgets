@@ -1,54 +1,21 @@
 [project]
 name = "pyside-widgets"
-version = "0.2.1"
-description = "Add your description here"
+version = "0.1.0"
+description = "Widgets created during the development of the Signal Viewer GUI."
 readme = "README.md"
-requires-python = ">=3.12"
+authors = [
+    { name = "devduck", email = "frederik.kraemer@dev-duck.dev" }
+]
+requires-python = ">=3.14"
 dependencies = [
     "darkdetect>=0.8.0",
-    "numpy>=2.2.4",
-    "pyqtgraph>=0.13.7",
-    "pyside6>=6.9.0",
-    "qtconsole>=5.6.1",
+    "numpy>=2.4.4",
+    "pyqtgraph>=0.14.0",
+    "pyside6>=6.11.0",
+    "qtconsole>=5.7.2",
 ]
-
-
-[tool.uv]
-dev-dependencies = [
-    "pytest-qt>=4.4.0",
-    "pytest>=8.3.5",
-    "rich>=14.0.0",
-    "ruff>=0.11.4",
-]
-
-
-[tool.uv.sources]
-pyqtgraph = { git = "https://github.com/pyqtgraph/pyqtgraph", rev = "master" }
-
-
-[tool.ruff]
-target-version = "py313"
-show-fixes = true
-output-format = "concise"
-line-length = 120
-
-[tool.ruff.lint.pydocstyle]
-convention = "numpy"
-
-[tool.pytest.ini_options]
-addopts = [
-    "--import-mode=importlib",
-]
-
-[tool.pyright]
-pythonVersion = "3.13"
-reportMissingTypeStubs = false
-reportUnknownMemberType = false
-reportUnknownLambdaType = false
-typeCheckingMode = "strict"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-
 
