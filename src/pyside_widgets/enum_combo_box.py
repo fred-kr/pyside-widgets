@@ -17,6 +17,7 @@ class EnumComboBox[T: enum.Enum](QtWidgets.QComboBox):
     Inspired by [`superqt.QEnumComboBox`](https://pyapp-kit.github.io/superqt/widgets/qenumcombobox/#qenumcombobox).
     """
 
+
     sig_current_enum_changed = QtCore.Signal(object)
 
     def __init__(
@@ -44,11 +45,13 @@ class EnumComboBox[T: enum.Enum](QtWidgets.QComboBox):
         """Setter of property `allowNone`."""
         self._allow_none = allow_none
 
+
     def set_enum_class(
         self,
         enum_class: type[enum.Enum] | None,
         text_data: Callable[[enum.Enum], str] | None = None,
         icon_data: Callable[[enum.Enum], QtGui.QIcon] | None = None,
+        doc_data: Callable[[enum.Enum], str] | None = None,
         doc_data: Callable[[enum.Enum], str] | None = None,
     ) -> None:
         """
@@ -74,6 +77,8 @@ class EnumComboBox[T: enum.Enum](QtWidgets.QComboBox):
             item.setData(enum_member, role=ItemDataRole.UserRole)
             if icon_data is not None:
                 item.setIcon(icon_data(enum_member))
+            if doc_data is not None:
+                item.setToolTip(doc_data(enum_member))
             if doc_data is not None:
                 item.setToolTip(doc_data(enum_member))
             self._enum_model.appendRow(item)
