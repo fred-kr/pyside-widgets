@@ -12,7 +12,7 @@
 			"reportUnknownMemberType": "none",
 		},
 		"files.exclude": {
-			"**/dist": true,
+			// "**/dist": true,
 			"**/build": true,
 			"**/output": true,
 			"**/pickles": true,
