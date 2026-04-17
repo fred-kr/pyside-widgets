@@ -1,7 +1,7 @@
 [project]
 name = "pyside-widgets"
 version = "0.2.1"
-description = "Widgets created during the development of the Signal Viewer GUI."
+description = "A collection of custom PySide6 widgets along with plugins for Qt Designer."
 readme = "README.md"
 authors = [
     { name = "devduck", email = "frederik.kraemer@dev-duck.dev" }

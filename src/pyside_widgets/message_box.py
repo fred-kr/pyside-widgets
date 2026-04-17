@@ -1,11 +1,13 @@
 """
-ResizableMessageBox — a QDialog-based drop-in replacement for QMessageBox
+ResizableMessageBox
+A QDialog-based drop-in replacement for QMessageBox
 that supports resizing, selectable text, the same standard button API,
 and an optional collapsible detail/traceback section.
 """
 
 import sys
 import traceback
+from enum import IntEnum
 
 from PySide6.QtCore import Property, QSize, Qt
 from PySide6.QtGui import QFont, QIcon
@@ -27,7 +29,7 @@ QStandardButton = QDialogButtonBox.StandardButton
 
 
 class ResizableMessageBox(QDialog):
-    class Icon:
+    class Icon(IntEnum):
         NoIcon = 0
         Information = 1
         Warning = 2
@@ -39,7 +41,7 @@ class ResizableMessageBox(QDialog):
 
     def __init__(
         self,
-        icon: int = 0,
+        icon: "ResizableMessageBox.Icon" = Icon.NoIcon,
         title: str = "",
         text: str = "",
         buttons: QStandardButton = QStandardButton.Ok,
@@ -104,7 +106,7 @@ class ResizableMessageBox(QDialog):
         btn_row.addStretch(1)
 
         self._detail_toggle = QPushButton(self._DETAIL_BTN_SHOW)
-        self._detail_toggle.setIcon(QIcon(":/icons/More"))
+        self._detail_toggle.setIcon(QIcon("icons/More"))
         # self._detail_toggle.setFlat(True)
         self._detail_toggle.setVisible(False)
         self._detail_toggle.clicked.connect(self._toggle_detail)
@@ -167,10 +169,10 @@ class ResizableMessageBox(QDialog):
 
     # ── Public API ────────────────────────────────────────────────────────────
 
-    def icon(self) -> int:
+    def get_icon(self) -> "ResizableMessageBox.Icon":
         return self._icon
 
-    def set_icon(self, icon: int) -> None:
+    def set_icon(self, icon: "ResizableMessageBox.Icon") -> None:
         self._icon = icon
         from PySide6.QtWidgets import QStyle
 
@@ -182,23 +184,19 @@ class ResizableMessageBox(QDialog):
         }
         sp = sp_map.get(icon)
         if sp is not None:
-            px = self.style().standardPixmap(sp, None, self)
-            self._icon_label.setPixmap(
-                px.scaled(
-                    QSize(48, 48),
-                    Qt.AspectRatioMode.KeepAspectRatioByExpanding,
-                    Qt.TransformationMode.SmoothTransformation,
-                )
-            )
+            self._icon_label.setPixmap(self.style().standardIcon(sp, None, self).pixmap(QSize(48, 48)))
             self._icon_label.setVisible(True)
         else:
             self._icon_label.setVisible(False)
 
+    def get_text(self) -> str:
+        return self._text_label.text()
+
     def set_text(self, text: str) -> None:
         self._text_label.setText(text)
 
-    def text(self) -> str:
-        return self._text_label.text()
+    def get_detail_text(self) -> str:
+        return self._detail_widget.toPlainText()
 
     def set_detail_text(self, text: str) -> None:
         """Set raw detail text (stacktrace, log dump, etc.)."""
@@ -210,18 +208,15 @@ class ResizableMessageBox(QDialog):
         tb = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
         self.set_detail_text(tb)
 
-    def detail_text(self) -> str:
-        return self._detail_widget.toPlainText()
-
     def clicked_button(self):
         return getattr(self, "_clicked", None)
 
     def button_box(self) -> QDialogButtonBox:
         return self._button_box
 
-    icon = Property(int, icon, set_icon)  # type: ignore
-    text = Property(str, text, set_text)  # type: ignore
-    detail_text = Property(str, detail_text, set_detail_text)  # type: ignore
+    icon = Property(Icon, get_icon, set_icon)
+    text = Property(str, get_text, set_text)
+    detail_text = Property(str, get_detail_text, set_detail_text)
 
     # ── Static convenience methods ────────────────────────────────────────────
 
