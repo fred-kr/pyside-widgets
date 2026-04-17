@@ -1,6 +1,6 @@
 [project]
 name = "pyside-widgets"
-version = "0.1.0"
+version = "0.2.0"
 description = "Widgets created during the development of the Signal Viewer GUI."
 readme = "README.md"
 authors = [
