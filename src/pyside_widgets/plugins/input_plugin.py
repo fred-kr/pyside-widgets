@@ -10,7 +10,7 @@ from pyside_widgets.toggle_switch import ToggleSwitch
 
 class InputPlugin(PluginBase):
     def group(self) -> str:
-        return super().group() + " / Inputs"
+        return super().group() + " (Inputs)"
 
 
 class ColorPickerButtonPlugin(InputPlugin, QDesignerCustomWidgetInterface):

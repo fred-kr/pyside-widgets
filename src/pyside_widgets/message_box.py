@@ -7,7 +7,7 @@ and an optional collapsible detail/traceback section.
 import sys
 import traceback
 
-from PySide6.QtCore import QSize, Qt
+from PySide6.QtCore import Property, QSize, Qt
 from PySide6.QtGui import QFont, QIcon
 from PySide6.QtWidgets import (
     QApplication,
@@ -122,6 +122,7 @@ class ResizableMessageBox(QDialog):
         self._root.addLayout(btn_row, 0)
 
         # ── Deferred init ─────────────────────────────────────────────────────
+        self._icon = icon
         self.set_icon(icon)
         if detail_text:
             self.set_detail_text(detail_text)
@@ -166,7 +167,11 @@ class ResizableMessageBox(QDialog):
 
     # ── Public API ────────────────────────────────────────────────────────────
 
+    def icon(self) -> int:
+        return self._icon
+
     def set_icon(self, icon: int) -> None:
+        self._icon = icon
         from PySide6.QtWidgets import QStyle
 
         sp_map = {
@@ -213,6 +218,10 @@ class ResizableMessageBox(QDialog):
 
     def button_box(self) -> QDialogButtonBox:
         return self._button_box
+
+    icon = Property(int, icon, set_icon)  # type: ignore
+    text = Property(str, text, set_text)  # type: ignore
+    detail_text = Property(str, detail_text, set_detail_text)  # type: ignore
 
     # ── Static convenience methods ────────────────────────────────────────────
 
