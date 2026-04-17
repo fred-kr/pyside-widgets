@@ -17,6 +17,7 @@ dependencies = [
 
 [project.scripts]
 demo = "pyside_widgets.examples.widget_gallery:main"
+designer = "pyside_widgets.examples.designer:run"
 
 [build-system]
 requires = ["hatchling"]
