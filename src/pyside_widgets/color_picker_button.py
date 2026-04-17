@@ -36,29 +36,29 @@ class ColorPickerButton(QPushButton):
         """Returns the appropriate color name format based on the visibility of the alpha channel."""
         return QColor.NameFormat.HexArgb if self._show_alpha else QColor.NameFormat.HexRgb
 
-    def showAlphaChannel(self) -> bool:
+    def get_show_alpha_channel(self) -> bool:
         """Whether to show the alpha channel in the color picker."""
         return self._show_alpha
 
-    def setShowAlphaChannel(self, value: bool) -> None:
+    def set_show_alpha_channel(self, value: bool) -> None:
         """Setter of property `showAlphaChannel`."""
         self._show_alpha = value
         self.set_color(self._color)
 
-    def showAsIcon(self) -> bool:
+    def get_show_as_icon(self) -> bool:
         """Whether to show the current color as an icon or as the button background color."""
         return self._show_icon
 
-    def setShowAsIcon(self, value: bool) -> None:
+    def set_show_as_icon(self, value: bool) -> None:
         """Setter of property `showAsIcon`."""
         self._show_icon = value
         self.set_color(self._color)
 
-    def showText(self) -> bool:
+    def get_show_text(self) -> bool:
         """Whether to show the current color's name in Hex(A)RGB format as the button text."""
         return self._show_text
 
-    def setShowText(self, value: bool) -> None:
+    def set_show_text(self, value: bool) -> None:
         """Setter of property `showText`."""
         self._show_text = value
         self.set_color(self._color)
@@ -79,7 +79,7 @@ class ColorPickerButton(QPushButton):
             self.sig_color_changed.emit(self._color)
 
         if self._show_text:
-            self.setText(self._color.name(self.text_fmt))
+            self.setText(" " + self._color.name(self.text_fmt))
         else:
             self.setText("")
 
@@ -118,6 +118,6 @@ class ColorPickerButton(QPushButton):
             new_color = QColorDialog.getColor(self._color, self)
         self.set_color(new_color)
 
-    showAlphaChannel = Property(bool, showAlphaChannel, setShowAlphaChannel)  # type: ignore
-    showAsIcon = Property(bool, showAsIcon, setShowAsIcon)  # type: ignore
-    showText = Property(bool, showText, setShowText)  # type: ignore
+    showAlphaChannel = Property(bool, get_show_alpha_channel, set_show_alpha_channel)
+    showAsIcon = Property(bool, get_show_as_icon, set_show_as_icon)
+    showText = Property(bool, get_show_text, set_show_text)
