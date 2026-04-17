@@ -32,7 +32,7 @@ class ResizableMessageBoxPlugin(ContainerPlugin, QDesignerCustomWidgetInterface)
                     <string>Message text</string>
                 </property>
                 <property name='icon'>
-                    <number>0</number>
+                    <number>1</number>
                 </property>
                 <property name='detail_text'>
                     <string></string>

@@ -7,7 +7,6 @@ and an optional collapsible detail/traceback section.
 
 import sys
 import traceback
-from enum import IntEnum
 
 from PySide6.QtCore import Property, QSize, Qt
 from PySide6.QtGui import QFont, QIcon
@@ -29,7 +28,7 @@ QStandardButton = QDialogButtonBox.StandardButton
 
 
 class ResizableMessageBox(QDialog):
-    class Icon(IntEnum):
+    class Icon:
         NoIcon = 0
         Information = 1
         Warning = 2
@@ -41,7 +40,7 @@ class ResizableMessageBox(QDialog):
 
     def __init__(
         self,
-        icon: "ResizableMessageBox.Icon" = Icon.NoIcon,
+        icon: int = 1,
         title: str = "",
         text: str = "",
         buttons: QStandardButton = QStandardButton.Ok,
@@ -106,7 +105,7 @@ class ResizableMessageBox(QDialog):
         btn_row.addStretch(1)
 
         self._detail_toggle = QPushButton(self._DETAIL_BTN_SHOW)
-        self._detail_toggle.setIcon(QIcon("icons/More"))
+        self._detail_toggle.setIcon(QIcon("://More"))
         # self._detail_toggle.setFlat(True)
         self._detail_toggle.setVisible(False)
         self._detail_toggle.clicked.connect(self._toggle_detail)
@@ -169,10 +168,10 @@ class ResizableMessageBox(QDialog):
 
     # ── Public API ────────────────────────────────────────────────────────────
 
-    def get_icon(self) -> "ResizableMessageBox.Icon":
+    def get_icon(self) -> int:
         return self._icon
 
-    def set_icon(self, icon: "ResizableMessageBox.Icon") -> None:
+    def set_icon(self, icon: int) -> None:
         self._icon = icon
         from PySide6.QtWidgets import QStyle
 
