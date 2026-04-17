@@ -42,13 +42,25 @@ class DecimalSpinBoxPlugin(InputPlugin, QDesignerCustomWidgetInterface):
     def createWidget(self, parent: QWidget) -> QWidget:
         return DecimalSpinBox(parent=parent)
 
-    # def domXml(self) -> str:
-    #     return """
-    #     <ui language='c++'>
-    #         <widget class='DecimalSpinBox' name='decimalSpinBox'>
-    #         </widget>
-    #     </ui>
-    #     """
+    def domXml(self) -> str:
+        return """
+        <ui language='c++'>
+            <widget class='DecimalSpinBox' name='decimalSpinBox'>
+                <property name='decimals'>
+                    <number>2</number>
+                </property>
+                <property name='minimum'>
+                    <number>0</number>
+                </property>
+                <property name='maximum'>
+                    <number>100</number>
+                </property>
+                <property name='singleStep'>
+                    <number>1</number>
+                </property>
+            </widget>
+        </ui>
+        """
 
     def name(self) -> str:
         return "DecimalSpinBox"
