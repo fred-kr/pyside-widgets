@@ -382,7 +382,7 @@ wheels = [
 
 [[package]]
 name = "pyside-widgets"
-version = "0.2.2"
+version = "0.2.3.dev1"
 source = { editable = "." }
 dependencies = [
     { name = "darkdetect" },
