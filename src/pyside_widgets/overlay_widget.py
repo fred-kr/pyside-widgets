@@ -263,31 +263,6 @@ class OverlayWidget(QtWidgets.QWidget):
     bar_color = QtCore.Property(QtGui.QColor, get_bar_color, set_bar_color)
 
 
-DOM_XML = """
-<ui language='c++'>
-    <widget class='OverlayWidget' name='overlayWidget'>
-        <property name='text'>
-            <string>Running...</string>
-        </property>
-        <property name='bg_color'>
-            <color alpha='128'>
-                <red>0</red>
-                <green>0</green>
-                <blue>0</blue>
-            </color>
-        </property>
-        <property name='bar_color'>
-            <color alpha='255'>
-                <red>100</red>
-                <green>149</green>
-                <blue>237</blue>
-            </color>
-        </property>
-    </widget>
-</ui>
-"""
-
-
 class OverlayWidgetPlugin(QtDesigner.QDesignerCustomWidgetInterface):
     def __init__(self) -> None:
         super().__init__()
@@ -297,7 +272,29 @@ class OverlayWidgetPlugin(QtDesigner.QDesignerCustomWidgetInterface):
         return OverlayWidget(parent=parent)
 
     def domXml(self) -> str:
-        return DOM_XML
+        return """
+        <ui language='c++'>
+            <widget class='OverlayWidget' name='overlayWidget'>
+                <property name='text'>
+                    <string>Running...</string>
+                </property>
+                <property name='bg_color'>
+                    <color alpha='128'>
+                        <red>0</red>
+                        <green>0</green>
+                        <blue>0</blue>
+                    </color>
+                </property>
+                <property name='bar_color'>
+                    <color alpha='255'>
+                        <red>100</red>
+                        <green>149</green>
+                        <blue>237</blue>
+                    </color>
+                </property>
+            </widget>
+        </ui>
+        """
 
     def group(self) -> str:
         return ""

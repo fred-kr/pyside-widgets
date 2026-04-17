@@ -1,4 +1,4 @@
-from PySide6 import QtCore, QtDesigner, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 type ColorLike = QtCore.Qt.GlobalColor | QtGui.QColor | str
 
@@ -163,53 +163,3 @@ class AnimatedToggleSwitch(ToggleSwitch):
         p.drawEllipse(QtCore.QPointF(x_pos, bar_rect.center().y()), handle_radius, handle_radius)
 
         p.end()
-
-
-DOM_XML = """
-<ui language='c++'>
-    <widget class='ToggleSwitch' name='toggleSwitch'>
-    </widget>
-</ui>
-"""
-
-
-class ToggleSwitchPlugin(QtDesigner.QDesignerCustomWidgetInterface):
-    def __init__(self) -> None:
-        super().__init__()
-        self._initialized = False
-
-    def createWidget(self, parent: QtWidgets.QWidget) -> ToggleSwitch:
-        return ToggleSwitch(parent=parent)
-
-    def domXml(self) -> str:
-        return DOM_XML
-
-    def group(self) -> str:
-        return ""
-
-    def icon(self) -> QtGui.QIcon:
-        return QtGui.QIcon()
-
-    def includeFile(self) -> str:
-        return __name__
-
-    def initialize(self, core: QtDesigner.QDesignerFormEditorInterface) -> None:
-        if self._initialized:
-            return
-
-        self._initialized = True
-
-    def isContainer(self) -> bool:
-        return False
-
-    def isInitialized(self) -> bool:
-        return self._initialized
-
-    def name(self) -> str:
-        return "ToggleSwitch"
-
-    def toolTip(self) -> str:
-        return "QCheckBox displayed as a toggle switch"
-
-    def whatsThis(self) -> str:
-        return self.toolTip()

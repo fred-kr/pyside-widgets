@@ -165,6 +165,7 @@ def main() -> None:
     decimal_spin_box.setRange(0, 100)
     decimal_spin_box.setDecimals(2)
     decimal_spin_box.setValue(50.25)
+    decimal_spin_box.setKeyboardTracking(False)
 
     output = QtWidgets.QTextEdit()
     output.setReadOnly(True)
@@ -190,10 +191,22 @@ def main() -> None:
     step_input.setValue(10)
     step_input.valueChanged.connect(decimal_spin_box.setSingleStep)
 
+    kbdtracking_input = QtWidgets.QCheckBox("Keyboard Tracking")
+    kbdtracking_input.setChecked(False)
+    kbdtracking_input.checkStateChanged.connect(
+        lambda: decimal_spin_box.setKeyboardTracking(kbdtracking_input.isChecked())
+    )
+
+    correction_method_input = EnumComboBox(enum_class=QtWidgets.QAbstractSpinBox.CorrectionMode)
+    correction_method_input.setCurrentIndex(0)
+    correction_method_input.sig_current_enum_changed.connect(lambda value: decimal_spin_box.setCorrectionMode(value))
+
     controls_layout = QtWidgets.QVBoxLayout()
     controls_layout.addWidget(min_input)
     controls_layout.addWidget(max_input)
     controls_layout.addWidget(step_input)
+    controls_layout.addWidget(kbdtracking_input)
+    controls_layout.addWidget(correction_method_input)
 
     decimal_spin_box_layout.addWidget(decimal_spin_box)
     decimal_spin_box_layout.addWidget(output)

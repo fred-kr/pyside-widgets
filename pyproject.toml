@@ -15,7 +15,11 @@ dependencies = [
     "qtconsole>=5.7.2",
 ]
 
+[project.scripts]
+demo = "pyside_widgets.examples.widget_gallery:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
 

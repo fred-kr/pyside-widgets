@@ -1,6 +1,6 @@
 import typing as t
 
-from PySide6 import QtCore, QtDesigner, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from ._style_sheets import CARD_STYLE_SHEET
 from ._utils import NOTHING, is_dark_theme
@@ -192,80 +192,3 @@ class SettingCard(QtWidgets.QFrame):
     icon = QtCore.Property(QtGui.QIcon, get_icon, set_icon)
     reset_shown = QtCore.Property(bool, get_reset_shown, set_reset_shown)
     icon_size = QtCore.Property(QtCore.QSize, get_icon_size, set_icon_size)
-
-
-DOM_XML = f"""
-<ui language='c++'>
-    <widget class='SettingCard' name='settingCard'>
-        <property name='title'>
-            <string>Setting Card</string>
-        </property>
-        <property name='description'>
-            <string></string>
-        </property>
-        <property name='icon'>
-            <iconset>
-                <normaloff>icons/ArrowReset.svg</normaloff>icons/ArrowReset.svg
-            </iconset>
-        </property>
-        <property name='reset_shown'>
-            <bool>true</bool>
-        </property>
-        <property name='icon_size'>
-            <size>
-                <width>16</width>
-                <height>16</height>
-            </size>
-        </property>
-        <property name='styleSheet'>
-            <string notr='true'>{CARD_STYLE_SHEET}
-            </string>
-        </property>
-    </widget>
-</ui>
-"""
-
-
-class SettingCardPlugin(QtDesigner.QDesignerCustomWidgetInterface):
-    def __init__(self) -> None:
-        super().__init__()
-        self._initialized = False
-
-    def createWidget(self, parent: QtWidgets.QWidget) -> QtWidgets.QWidget:
-        return SettingCard(
-            title="Setting Card",
-            parent=parent,
-        )
-
-    def domXml(self) -> str:
-        return DOM_XML
-
-    def group(self) -> str:
-        return ""
-
-    def icon(self) -> QtGui.QIcon:
-        return QtGui.QIcon()
-
-    def includeFile(self) -> str:
-        return __name__
-
-    def initialize(self, core: QtDesigner.QDesignerFormEditorInterface) -> None:
-        if self._initialized:
-            return
-
-        self._initialized = True
-
-    def isContainer(self) -> bool:
-        return False
-
-    def isInitialized(self) -> bool:
-        return self._initialized
-
-    def name(self) -> str:
-        return "SettingCard"
-
-    def toolTip(self) -> str:
-        return "Widget for displaying and editing a single setting value."
-
-    def whatsThis(self) -> str:
-        return self.toolTip()

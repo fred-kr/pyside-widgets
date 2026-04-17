@@ -1,5 +1,4 @@
 from PySide6.QtCore import Property, Signal, Slot
-from PySide6.QtDesigner import QDesignerCustomWidgetInterface, QDesignerFormEditorInterface
 from PySide6.QtGui import QColor, QIcon, QPalette, QPixmap
 from PySide6.QtWidgets import QColorDialog, QPushButton, QWidget
 
@@ -116,62 +115,3 @@ class ColorPickerButton(QPushButton):
     showAlphaChannel = Property(bool, showAlphaChannel, setShowAlphaChannel)  # type: ignore
     showAsIcon = Property(bool, showAsIcon, setShowAsIcon)  # type: ignore
     showText = Property(bool, showText, setShowText)  # type: ignore
-
-
-DOM_XML = """
-<ui language='c++'>
-    <widget class='ColorPickerButton' name='colorPickerButton'>
-        <property name='showAlphaChannel'>
-            <bool>false</bool>
-        </property>
-        <property name='showAsIcon'>
-            <bool>true</bool>
-        </property>
-        <property name='showText'>
-            <bool>false</bool>
-        </property>
-    </widget>
-</ui>
-"""
-
-
-class ColorPickerButtonPlugin(QDesignerCustomWidgetInterface):
-    def __init__(self) -> None:
-        super().__init__()
-        self._initialized = False
-
-    def createWidget(self, parent: QWidget) -> QWidget:
-        return ColorPickerButton(parent=parent)
-
-    def domXml(self) -> str:
-        return DOM_XML
-
-    def group(self) -> str:
-        return ""
-
-    def icon(self) -> QIcon:
-        return QIcon()
-
-    def includeFile(self) -> str:
-        return __name__
-
-    def initialize(self, core: QDesignerFormEditorInterface) -> None:
-        if self._initialized:
-            return
-
-        self._initialized = True
-
-    def isContainer(self) -> bool:
-        return False
-
-    def isInitialized(self) -> bool:
-        return self._initialized
-
-    def name(self) -> str:
-        return "ColorPickerButton"
-
-    def toolTip(self) -> str:
-        return "Select a color using a color picker dialog."
-
-    def whatsThis(self) -> str:
-        return self.toolTip()

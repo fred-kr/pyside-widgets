@@ -1,6 +1,5 @@
 from PySide6.QtCore import Property, QSize, Qt
-from PySide6.QtDesigner import QDesignerCustomWidgetInterface, QDesignerFormEditorInterface
-from PySide6.QtGui import QAction, QIcon, QResizeEvent
+from PySide6.QtGui import QAction, QResizeEvent
 from PySide6.QtWidgets import QToolBar, QWidget
 
 
@@ -116,59 +115,3 @@ class CommandBar(QToolBar):
 
     fill = Property(bool, get_fill, set_fill)
     alignment = Property(Qt.AlignmentFlag, get_alignment, set_alignment)
-
-
-DOM_XML = """
-<ui language='c++'>
-    <widget class='CommandBar' name='commandBar'>
-        <property name='fill'>
-            <bool>true</bool>
-        </property>
-        <property name='alignment'>
-            <enum>AlignLeft</enum>
-        </property>
-    </widget>
-</ui>
-"""
-
-
-class CommandBarPlugin(QDesignerCustomWidgetInterface):
-    def __init__(self) -> None:
-        super().__init__()
-        self._initialized = False
-
-    def createWidget(self, parent: QWidget) -> CommandBar:
-        return CommandBar(parent=parent)
-
-    def domXml(self) -> str:
-        return DOM_XML
-
-    def group(self) -> str:
-        return ""
-
-    def icon(self) -> QIcon:
-        return QIcon()
-
-    def includeFile(self) -> str:
-        return __name__
-
-    def initialize(self, core: QDesignerFormEditorInterface) -> None:
-        if self._initialized:
-            return
-
-        self._initialized = True
-
-    def isContainer(self) -> bool:
-        return False
-
-    def isInitialized(self) -> bool:
-        return self._initialized
-
-    def name(self) -> str:
-        return "CommandBar"
-
-    def toolTip(self) -> str:
-        return ""
-
-    def whatsThis(self) -> str:
-        return self.toolTip()
