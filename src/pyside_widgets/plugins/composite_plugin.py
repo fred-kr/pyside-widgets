@@ -74,7 +74,7 @@ class ResizableMessageBoxPlugin(CompositePlugin, QDesignerCustomWidgetInterface)
                     <string>Message text</string>
                 </property>
                 <property name='icon'>
-                    <enum>Icon::NoIcon</enum>
+                    <number>0</number>
                 </property>
                 <property name='detail_text'>
                     <string></string>
@@ -82,7 +82,6 @@ class ResizableMessageBoxPlugin(CompositePlugin, QDesignerCustomWidgetInterface)
             </widget>
         </ui>
         """
-        # <number>0</number>
 
     def name(self) -> str:
         return "ResizableMessageBox"
