@@ -23,6 +23,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+QStandardButton = QDialogButtonBox.StandardButton
+
 
 class ResizableMessageBox(QDialog):
     class Icon:
@@ -40,9 +42,9 @@ class ResizableMessageBox(QDialog):
         icon: int = 0,
         title: str = "",
         text: str = "",
-        buttons=QDialogButtonBox.StandardButton.Ok,
-        default_button=QDialogButtonBox.StandardButton.Ok,
-        parent=None,
+        buttons: QStandardButton = QStandardButton.Ok,
+        default_button: QStandardButton = QStandardButton.Ok,
+        parent: QWidget | None = None,
         min_size: tuple[int, int] = (480, 180),
         selectable_text: bool = True,
         detail_text: str = "",
@@ -99,15 +101,14 @@ class ResizableMessageBox(QDialog):
         # ── Button row ────────────────────────────────────────────────────────
         btn_row = QHBoxLayout()
         btn_row.setContentsMargins(0, 0, 0, 0)
+        btn_row.addStretch(1)
 
         self._detail_toggle = QPushButton(self._DETAIL_BTN_SHOW)
-        self._detail_toggle.setIcon(QIcon("://icons/More"))
-        self._detail_toggle.setFlat(True)
+        self._detail_toggle.setIcon(QIcon(":/icons/More"))
+        # self._detail_toggle.setFlat(True)
         self._detail_toggle.setVisible(False)
         self._detail_toggle.clicked.connect(self._toggle_detail)
         btn_row.addWidget(self._detail_toggle, 0)
-
-        btn_row.addStretch(1)
 
         self._button_box = QDialogButtonBox(buttons)
         self._button_box.accepted.connect(self.accept)
@@ -180,7 +181,7 @@ class ResizableMessageBox(QDialog):
             self._icon_label.setPixmap(
                 px.scaled(
                     QSize(48, 48),
-                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.AspectRatioMode.KeepAspectRatioByExpanding,
                     Qt.TransformationMode.SmoothTransformation,
                 )
             )
@@ -216,7 +217,13 @@ class ResizableMessageBox(QDialog):
     # ── Static convenience methods ────────────────────────────────────────────
 
     @staticmethod
-    def information(parent, title: str, text: str, buttons=QDialogButtonBox.StandardButton.Ok, detail: str = "") -> int:
+    def information(
+        parent: QWidget | None,
+        title: str,
+        text: str,
+        buttons: QStandardButton = QStandardButton.Ok,
+        detail: str = "",
+    ) -> int:
         dlg = ResizableMessageBox(
             ResizableMessageBox.Icon.Information, title, text, buttons, parent=parent, detail_text=detail
         )
@@ -224,10 +231,10 @@ class ResizableMessageBox(QDialog):
 
     @staticmethod
     def warning(
-        parent,
+        parent: QWidget | None,
         title: str,
         text: str,
-        buttons=QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel,
+        buttons: QStandardButton = QStandardButton.Ok | QStandardButton.Cancel,
         detail: str = "",
     ) -> int:
         dlg = ResizableMessageBox(
@@ -236,7 +243,13 @@ class ResizableMessageBox(QDialog):
         return dlg.exec()
 
     @staticmethod
-    def critical(parent, title: str, text: str, buttons=QDialogButtonBox.StandardButton.Ok, detail: str = "") -> int:
+    def critical(
+        parent: QWidget | None,
+        title: str,
+        text: str,
+        buttons: QStandardButton = QStandardButton.Ok,
+        detail: str = "",
+    ) -> int:
         dlg = ResizableMessageBox(
             ResizableMessageBox.Icon.Critical, title, text, buttons, parent=parent, detail_text=detail
         )
@@ -244,10 +257,10 @@ class ResizableMessageBox(QDialog):
 
     @staticmethod
     def question(
-        parent,
+        parent: QWidget | None,
         title: str,
         text: str,
-        buttons=QDialogButtonBox.StandardButton.Yes | QDialogButtonBox.StandardButton.No,
+        buttons: QStandardButton = QStandardButton.Yes | QStandardButton.No,
         detail: str = "",
     ) -> int:
         dlg = ResizableMessageBox(
@@ -257,7 +270,11 @@ class ResizableMessageBox(QDialog):
 
     @staticmethod
     def from_exception(
-        parent, title: str, text: str, exc: BaseException, buttons=QDialogButtonBox.StandardButton.Ok
+        parent: QWidget | None,
+        title: str,
+        text: str,
+        exc: BaseException,
+        buttons: QStandardButton = QStandardButton.Ok,
     ) -> int:
         """Convenience: create a Critical dialog pre-loaded with a formatted exception."""
         dlg = ResizableMessageBox(ResizableMessageBox.Icon.Critical, title, text, buttons, parent=parent)
@@ -272,7 +289,7 @@ def _make_fake_exception() -> ZeroDivisionError:
     """Produce a real exception with a genuine traceback."""
 
     def inner():
-        result = 1 / 0
+        _result = 1 / 0
 
     def outer():
         inner()

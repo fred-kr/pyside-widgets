@@ -1,26 +1,29 @@
-from PySide6 import QtCore, QtDesigner, QtGui, QtWidgets
+from PySide6.QtCore import Property, Signal, Slot
+from PySide6.QtDesigner import QDesignerCustomWidgetInterface, QDesignerFormEditorInterface
+from PySide6.QtGui import QColor, QIcon, QPalette, QPixmap
+from PySide6.QtWidgets import QColorDialog, QPushButton, QWidget
 
 from pyside_widgets._utils import get_text_color
 
 
-class ColorPickerButton(QtWidgets.QPushButton):
+class ColorPickerButton(QPushButton):
     """
     A button that opens a color picker dialog when clicked.
     """
 
-    sig_color_changed = QtCore.Signal(QtGui.QColor)
+    sig_color_changed = Signal(QColor)
 
     def __init__(
         self,
-        parent: QtWidgets.QWidget | None = None,
-        color: QtGui.QColor | None = None,
+        parent: QWidget | None = None,
+        color: QColor | None = None,
         show_alpha: bool = False,
         show_icon: bool = True,
         show_text: bool = True,
     ) -> None:
         super().__init__(parent)
 
-        self._default_color = super().palette().color(QtGui.QPalette.ColorRole.Button)
+        self._default_color = super().palette().color(QPalette.ColorRole.Button)
         self._color = color or self._default_color
         self._show_alpha = show_alpha
         self._show_icon = show_icon
@@ -30,9 +33,9 @@ class ColorPickerButton(QtWidgets.QPushButton):
         self.pressed.connect(self._on_clicked)
 
     @property
-    def text_fmt(self) -> QtGui.QColor.NameFormat:
+    def text_fmt(self) -> QColor.NameFormat:
         """Returns the appropriate color name format based on the visibility of the alpha channel."""
-        return QtGui.QColor.NameFormat.HexArgb if self._show_alpha else QtGui.QColor.NameFormat.HexRgb
+        return QColor.NameFormat.HexArgb if self._show_alpha else QColor.NameFormat.HexRgb
 
     def showAlphaChannel(self) -> bool:
         """Whether to show the alpha channel in the color picker."""
@@ -61,7 +64,7 @@ class ColorPickerButton(QtWidgets.QPushButton):
         self._show_text = value
         self.set_color(self._color)
 
-    def set_color(self, color: QtGui.QColor) -> None:
+    def set_color(self, color: QColor) -> None:
         """Sets the current color of the button.
 
         Emits `sig_color_changed` if the color actually changes.
@@ -83,36 +86,36 @@ class ColorPickerButton(QtWidgets.QPushButton):
 
         if self._show_icon:
             self.setStyleSheet("")
-            icon = QtGui.QPixmap(self.iconSize())
+            icon = QPixmap(self.iconSize())
             icon.fill(self._color)
             self.setIcon(icon)
         else:
-            self.setIcon(QtGui.QIcon())
+            self.setIcon(QIcon())
             text_color = get_text_color(self._color)
             self.setStyleSheet(
                 f"ColorPickerButton {{ background-color: {self._color.name()}; color: {text_color.name()}; }}"
             )
 
-    def color(self) -> QtGui.QColor:
+    def color(self) -> QColor:
         return self._color
 
-    @QtCore.Slot()
+    @Slot()
     def _on_clicked(self) -> None:
         """Launches a color selection dialog when the button is clicked.
 
         Allows the user to choose a new color with optional alpha channel visibility based on configuration.
         """
         if self._show_alpha:
-            new_color = QtWidgets.QColorDialog.getColor(
-                self._color, self, options=QtWidgets.QColorDialog.ColorDialogOption.ShowAlphaChannel
+            new_color = QColorDialog.getColor(
+                self._color, self, options=QColorDialog.ColorDialogOption.ShowAlphaChannel
             )
         else:
-            new_color = QtWidgets.QColorDialog.getColor(self._color, self)
+            new_color = QColorDialog.getColor(self._color, self)
         self.set_color(new_color)
 
-    showAlphaChannel = QtCore.Property(bool, showAlphaChannel, setShowAlphaChannel)  # type: ignore
-    showAsIcon = QtCore.Property(bool, showAsIcon, setShowAsIcon)  # type: ignore
-    showText = QtCore.Property(bool, showText, setShowText)  # type: ignore
+    showAlphaChannel = Property(bool, showAlphaChannel, setShowAlphaChannel)  # type: ignore
+    showAsIcon = Property(bool, showAsIcon, setShowAsIcon)  # type: ignore
+    showText = Property(bool, showText, setShowText)  # type: ignore
 
 
 DOM_XML = """
@@ -132,12 +135,12 @@ DOM_XML = """
 """
 
 
-class ColorPickerButtonPlugin(QtDesigner.QDesignerCustomWidgetInterface):
+class ColorPickerButtonPlugin(QDesignerCustomWidgetInterface):
     def __init__(self) -> None:
         super().__init__()
         self._initialized = False
 
-    def createWidget(self, parent: QtWidgets.QWidget) -> QtWidgets.QWidget:
+    def createWidget(self, parent: QWidget) -> QWidget:
         return ColorPickerButton(parent=parent)
 
     def domXml(self) -> str:
@@ -146,13 +149,13 @@ class ColorPickerButtonPlugin(QtDesigner.QDesignerCustomWidgetInterface):
     def group(self) -> str:
         return ""
 
-    def icon(self) -> QtGui.QIcon:
-        return QtGui.QIcon()
+    def icon(self) -> QIcon:
+        return QIcon()
 
     def includeFile(self) -> str:
         return __name__
 
-    def initialize(self, core: QtDesigner.QDesignerFormEditorInterface) -> None:
+    def initialize(self, core: QDesignerFormEditorInterface) -> None:
         if self._initialized:
             return
 

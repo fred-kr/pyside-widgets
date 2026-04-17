@@ -1,17 +1,20 @@
-from PySide6 import QtCore, QtDesigner, QtGui, QtWidgets
+from PySide6.QtCore import Property, QSize, Qt
+from PySide6.QtDesigner import QDesignerCustomWidgetInterface, QDesignerFormEditorInterface
+from PySide6.QtGui import QAction, QIcon, QResizeEvent
+from PySide6.QtWidgets import QToolBar, QWidget
 
 
-class CommandBar(QtWidgets.QToolBar):
+class CommandBar(QToolBar):
     def __init__(
         self,
-        parent: QtWidgets.QWidget | None = None,
+        parent: QWidget | None = None,
         fill: bool = True,
-        alignment: QtCore.Qt.AlignmentFlag = QtCore.Qt.AlignmentFlag.AlignLeft,
+        alignment: Qt.AlignmentFlag = Qt.AlignmentFlag.AlignLeft,
     ) -> None:
         super().__init__(parent)
         self.setMovable(False)
-        self.setIconSize(QtCore.QSize(16, 16))
-        self.setToolButtonStyle(QtCore.Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
+        self.setIconSize(QSize(16, 16))
+        self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
 
         # When fill is True the actions will be stretched to fill the toolbar.
         # When fill is False the actions will use their sizeHint, and be aligned according to _alignment.
@@ -26,15 +29,15 @@ class CommandBar(QtWidgets.QToolBar):
     def get_fill(self) -> bool:
         return self._fill
 
-    def set_alignment(self, alignment: QtCore.Qt.AlignmentFlag) -> None:
-        """Set the alignment (e.g. Qt.AlignLeft or Qt.AlignRight) for non-fill mode."""
+    def set_alignment(self, alignment: Qt.AlignmentFlag) -> None:
+        """Set the alignment for non-fill mode."""
         self._alignment = alignment
         self.update()
 
-    def get_alignment(self) -> QtCore.Qt.AlignmentFlag:
+    def get_alignment(self) -> Qt.AlignmentFlag:
         return self._alignment
 
-    def resizeEvent(self, event: QtGui.QResizeEvent) -> None:
+    def resizeEvent(self, event: QResizeEvent) -> None:
         super().resizeEvent(event)
         actions = self.actions()
         if not actions:
@@ -47,11 +50,11 @@ class CommandBar(QtWidgets.QToolBar):
         else:
             self._resize_align(actions, total_width)
 
-    def _resize_align(self, actions: list[QtGui.QAction], total_width: int) -> None:
+    def _resize_align(self, actions: list[QAction], total_width: int) -> None:
         # --- NON-FILL MODE: Use each widget's natural size and align the group ---
         # First, compute the total width required by the visible widgets.
         total_required_width = 0
-        widget_geometries: list[tuple[QtWidgets.QWidget, int]] = []  # Store tuples of (widget, width)
+        widget_geometries: list[tuple[QWidget, int]] = []  # Store tuples of (widget, width)
         for action in actions:
             widget = self.widgetForAction(action)
             if not widget:
@@ -64,7 +67,7 @@ class CommandBar(QtWidgets.QToolBar):
         if total_required_width > total_width:
             # If actions exceed available width, simply start at 0.
             start_x = 0
-        elif self._alignment == QtCore.Qt.AlignmentFlag.AlignRight:
+        elif self._alignment == Qt.AlignmentFlag.AlignRight:
             start_x = total_width - total_required_width
         else:
             # Default to left alignment.
@@ -75,7 +78,7 @@ class CommandBar(QtWidgets.QToolBar):
             widget.setGeometry(x, 0, w, self.height())
             x += w
 
-    def _resize_fill(self, actions: list[QtGui.QAction], total_width: int) -> None:
+    def _resize_fill(self, actions: list[QAction], total_width: int) -> None:
         # --- FILL MODE: Evenly distribute non-separator actions across the full width ---
         non_separator_actions = [a for a in actions if not a.isSeparator()]
         num_non_separator = len(non_separator_actions)
@@ -111,8 +114,8 @@ class CommandBar(QtWidgets.QToolBar):
             widget.setGeometry(x, 0, w, self.height())
             x += w
 
-    fill = QtCore.Property(bool, get_fill, set_fill)
-    alignment = QtCore.Property(QtCore.Qt.AlignmentFlag, get_alignment, set_alignment)
+    fill = Property(bool, get_fill, set_fill)
+    alignment = Property(Qt.AlignmentFlag, get_alignment, set_alignment)
 
 
 DOM_XML = """
@@ -129,12 +132,12 @@ DOM_XML = """
 """
 
 
-class CommandBarPlugin(QtDesigner.QDesignerCustomWidgetInterface):
+class CommandBarPlugin(QDesignerCustomWidgetInterface):
     def __init__(self) -> None:
         super().__init__()
         self._initialized = False
 
-    def createWidget(self, parent: QtWidgets.QWidget) -> CommandBar:
+    def createWidget(self, parent: QWidget) -> CommandBar:
         return CommandBar(parent=parent)
 
     def domXml(self) -> str:
@@ -143,13 +146,13 @@ class CommandBarPlugin(QtDesigner.QDesignerCustomWidgetInterface):
     def group(self) -> str:
         return ""
 
-    def icon(self) -> QtGui.QIcon:
-        return QtGui.QIcon()
+    def icon(self) -> QIcon:
+        return QIcon()
 
     def includeFile(self) -> str:
         return __name__
 
-    def initialize(self, core: QtDesigner.QDesignerFormEditorInterface) -> None:
+    def initialize(self, core: QDesignerFormEditorInterface) -> None:
         if self._initialized:
             return
 
