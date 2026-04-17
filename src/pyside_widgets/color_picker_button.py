@@ -1,5 +1,5 @@
 from PySide6.QtCore import Property, Signal, Slot
-from PySide6.QtGui import QColor, QIcon, QPalette, QPixmap
+from PySide6.QtGui import QColor, QIcon, QPainter, QPalette, QPen, QPixmap
 from PySide6.QtWidgets import QColorDialog, QPushButton, QWidget
 
 from pyside_widgets._utils import get_text_color
@@ -22,7 +22,7 @@ class ColorPickerButton(QPushButton):
     ) -> None:
         super().__init__(parent)
 
-        self._default_color = super().palette().color(QPalette.ColorRole.Button)
+        self._default_color = super().palette().color(QPalette.ColorRole.Accent)
         self._color = color or self._default_color
         self._show_alpha = show_alpha
         self._show_icon = show_icon
@@ -87,6 +87,12 @@ class ColorPickerButton(QPushButton):
             self.setStyleSheet("")
             icon = QPixmap(self.iconSize())
             icon.fill(self._color)
+            painter = QPainter(icon)
+            pen = QPen(QColor("black"))
+            pen.setWidth(1)
+            painter.setPen(pen)
+            painter.drawRect(icon.rect().adjusted(0, 0, -1, -1))
+            painter.end()
             self.setIcon(icon)
         else:
             self.setIcon(QIcon())
