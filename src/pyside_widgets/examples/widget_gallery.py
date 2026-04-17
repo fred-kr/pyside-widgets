@@ -262,8 +262,8 @@ def main() -> None:
     color_picker.sig_color_changed.connect(lambda color: print(f"Color 1: {color.name()}"))
 
     color_picker2 = ColorPickerButton()
-    color_picker2.setShowAlphaChannel(True)
-    color_picker2.setShowText(True)
+    color_picker2.set_show_alpha_channel(True)
+    color_picker2.set_show_text(True)
     color_picker2.sig_color_changed.connect(
         lambda color: print(f"Color 2: {color.name(QtGui.QColor.NameFormat.HexArgb)}")
     )

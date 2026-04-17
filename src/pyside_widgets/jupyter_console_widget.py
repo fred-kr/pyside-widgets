@@ -1,14 +1,14 @@
-import typing as t
+from typing import TYPE_CHECKING, Any, Literal
 
 from PySide6 import QtCore, QtGui, QtWidgets
 from qtconsole import inprocess
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:
     import jupyter_client
 
 
-class JupyterConsoleWidget(inprocess.QtInProcessRichJupyterWidget):
-    def __init__(self, style: t.Literal["lightbg", "linux", "nocolor"] = "linux") -> None:
+class JupyterConsoleWidget(inprocess.QtInProcessRichJupyterWidget, QtWidgets.QWidget):
+    def __init__(self, style: Literal["lightbg", "linux", "nocolor"] = "linux") -> None:
         super().__init__()
         self.set_default_style(style)
 
@@ -33,8 +33,8 @@ class JupyterConsoleWindow(QtWidgets.QWidget):
     def __init__(
         self,
         parent: QtWidgets.QWidget | None = None,
-        namespace: dict[str, t.Any] | None = None,
-        style: t.Literal["lightbg", "linux", "nocolor"] = "linux",
+        namespace: dict[str, Any] | None = None,
+        style: Literal["lightbg", "linux", "nocolor"] = "linux",
     ) -> None:
         super().__init__(parent)
         namespace = namespace or {}
@@ -47,7 +47,7 @@ class JupyterConsoleWindow(QtWidgets.QWidget):
         self.console = JupyterConsoleWidget(style=style)
         layout = QtWidgets.QVBoxLayout()
 
-        layout.addWidget(self.console)  # type: ignore
+        layout.addWidget(self.console)
         self.setLayout(layout)
 
         self.setWindowTitle("Jupyter Console")
@@ -55,7 +55,7 @@ class JupyterConsoleWindow(QtWidgets.QWidget):
 
         self._prepare_console(namespace)
 
-    def _prepare_console(self, namespace: dict[str, t.Any]) -> None:
+    def _prepare_console(self, namespace: dict[str, Any]) -> None:
         if self.console.kernel_manager.kernel is None:
             return
         if self.console.kernel_manager.kernel.shell is None:
