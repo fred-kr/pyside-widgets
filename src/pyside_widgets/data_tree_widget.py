@@ -1,11 +1,9 @@
+import math
 import traceback
 import types
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import numpy as np
-import numpy.typing as npt
-import pyqtgraph as pg
-from PySide6.QtCore import QModelIndex, QPersistentModelIndex, QPoint, Qt
+from PySide6.QtCore import QPoint, Qt
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QApplication,
@@ -16,21 +14,68 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPlainTextEdit,
     QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
     QWidget,
 )
 
+if TYPE_CHECKING:
+    import numpy.typing as npt
+
 ItemDataRole = Qt.ItemDataRole
-type ModelIndex = QModelIndex | QPersistentModelIndex
+
+_MAX_INLINE_ELEMENTS = 1000
+"""Arrays with more elements than this get a summary button instead of an inline table."""
+_MAX_TABLE_CELLS = 10_000
+"""Upper bound on cells rendered in any array table, inline or in the full-array dialog."""
+_MAX_DESC_LENGTH = 100
+"""Longer value descriptions are truncated in the tree and shown in full in a child text box."""
+
+
+def _is_array_like(obj: object) -> bool:
+    """True for numpy arrays and anything with the same ``shape``/``dtype``/``__array__`` interface."""
+    return hasattr(obj, "__array__") and hasattr(obj, "shape") and hasattr(obj, "dtype")
+
+
+def _array_size(arr: Any) -> int:
+    size = getattr(arr, "size", None)
+    return int(size) if size is not None else math.prod(arr.shape)
+
+
+def _array_table(arr: Any, parent: QWidget | None = None) -> QWidget:
+    """Read-only table showing a 0-, 1- or 2-d array. Higher dimensions fall back to text."""
+    shape = tuple(arr.shape)
+    if len(shape) > 2:
+        editor = QPlainTextEdit(str(arr), parent)
+        editor.setReadOnly(True)
+        return editor
+
+    n_cols = shape[1] if len(shape) == 2 else 1
+    n_rows = min(shape[0] if shape else 1, _MAX_TABLE_CELLS // max(n_cols, 1))
+
+    if len(shape) == 0:
+        rows: list[list[Any]] = [[arr.tolist()]]
+    elif len(shape) == 1:
+        rows = [[v] for v in arr[:n_rows].tolist()]
+    else:
+        rows = arr[:n_rows].tolist()
+
+    table = QTableWidget(n_rows, n_cols, parent)
+    table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+    for r, row in enumerate(rows):
+        for c, value in enumerate(row):
+            table.setItem(r, c, QTableWidgetItem(str(value)))
+    return table
 
 
 class DataTreeWidget(QTreeWidget):
     """
-    Widget for displaying hierarchical python data structures (eg. nested dicts, lists, arrays, etc.)
+    Tree view of nested python data (dicts, lists, tuples, arrays, tracebacks, scalars).
 
-    Based on `pyqtgraph.widgets.DataTreeWidget`.
+    Based on `pyqtgraph.widgets.DataTreeWidget`, without the pyqtgraph/numpy dependency.
     """
 
     def __init__(
@@ -47,6 +92,9 @@ class DataTreeWidget(QTreeWidget):
         self.setAlternatingRowColors(True)
 
         self._allow_edit = allow_edit
+        self._sort_order: Qt.SortOrder | None = None
+        self._widgets: list[QWidget] = []
+        self._nodes: dict[tuple[str | int, ...], QTreeWidgetItem] = {}
 
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_context_menu)
@@ -54,40 +102,34 @@ class DataTreeWidget(QTreeWidget):
         if data is not None:
             self.set_data(data, hide_root=hide_root)
 
+    def clear(self) -> None:
+        super().clear()
+        self._widgets.clear()
+        self._nodes.clear()
+
     def set_data(self, data: dict[str, Any], hide_root: bool = True) -> None:
         """
-        Set the data to be displayed.
+        Replace the displayed data.
 
         Args:
-            data (dict[str, Any]): The data to be displayed.
-            hide_root (bool, optional): Whether to hide the root node. Defaults to True.
+            data: The data to display.
+            hide_root: If True, the top-level entries of ``data`` become top-level tree items. If False, a single
+                root item wraps them.
         """
         self.clear()
-
-        self._widgets: list[QWidget] = []
-        self._nodes: dict[tuple[str | int, ...], QTreeWidgetItem] = {}
         self.build_tree(data, self.invisibleRootItem(), hide_root=hide_root)
         self.expandToDepth(3)
         self.resizeColumnToContents(0)
 
     def build_tree(
         self,
-        data: dict[str, Any],
+        data: Any,
         parent: QTreeWidgetItem,
         name: str = "",
         hide_root: bool = True,
         path: tuple[str | int, ...] = (),
     ) -> None:
-        """
-        Recursively build the tree from the given data.
-
-        Args:
-            data (dict[str, Any]): A dictionary containing the data to be displayed.
-            parent (QTreeWidgetItem): The parent item under which the data will be displayed.
-            name (str, optional): The name to be displayed for the current node. Defaults to "".
-            hide_root (bool, optional): Whether to hide the root node. Defaults to True.
-            path (tuple[str | int, ...], optional): A tuple containing the path to the current node. Defaults to ().
-        """
+        """Recursively add ``data`` below ``parent``."""
         if hide_root:
             node = parent
         else:
@@ -101,12 +143,12 @@ class DataTreeWidget(QTreeWidget):
         node.setText(1, type_str)
         node.setData(2, ItemDataRole.UserRole, data)
 
-        if len(desc) > 100:
-            desc = f"{desc[:97]}..."
+        if len(desc) > _MAX_DESC_LENGTH:
+            node.setText(2, f"{desc[: _MAX_DESC_LENGTH - 3]}...")
             if widget is None:
-                widget = QPlainTextEdit()
+                widget = QPlainTextEdit(desc)
                 widget.setReadOnly(True)
-                widget.setPlainText(desc)
+                widget.setMaximumHeight(200)
         else:
             node.setText(2, desc)
 
@@ -118,47 +160,31 @@ class DataTreeWidget(QTreeWidget):
             sub_node.setFirstColumnSpanned(True)
 
         for key, child_data in childs.items():
-            self.build_tree(child_data, node, str(key), path=path + (key,))
+            self.build_tree(child_data, node, str(key), hide_root=False, path=(*path, key))
 
-    def parse_data(self, data: Any) -> tuple[str, str, dict[int, Any], QWidget | None]:
+    def parse_data(self, data: Any) -> tuple[str, str, dict[Any, Any], QWidget | None]:
         """
-        Parse the given data and return its type, description, children, and widget.
-
-        Args:
-            data (Any): Data to be parsed.
+        Describe ``data`` for display.
 
         Returns:
-            tuple ((str, str, dict[int, Any], QWidget | None)): type string, description text, dictionary of
-            child data to recursively parse, widget to display the data if supported
+            type name, description text, children to recurse into, and an optional widget that shows the value.
         """
         type_str = type(data).__name__
-        if type_str == "instance":
-            type_str += f": {data.__class__.__name__}"
-        widget = None
+        widget: QWidget | None = None
         desc = ""
-        childs: dict[int, Any] = {}
+        childs: dict[Any, Any] = {}
 
         if isinstance(data, dict):
-            desc = f"length={len(data)}"  # type: ignore
-            childs = dict(data.items())  # type: ignore
+            desc = f"length={len(data)}"
+            childs = dict(data)
         elif isinstance(data, (list, tuple)):
-            desc = f"length={len(data)}"  # type: ignore
-            childs = dict(enumerate(data))  # type: ignore
-        elif isinstance(data, np.ndarray):
-            desc = f"shape={data.shape} dtype={data.dtype}"
-            if data.size > 1000:
-                summary = f"min={data.min()}, max={data.max()}, mean={data.mean():.2f}"
-                widget = QPushButton(f"Array summary: {summary}")
-                widget.clicked.connect(lambda: self.show_full_array(data))  # type: ignore
-            else:
-                table = pg.TableWidget()
-                table.setData(data)
-                table.setMaximumHeight(200)
-                widget = table
+            desc = f"length={len(data)}"
+            childs = dict(enumerate(data))
+        elif _is_array_like(data):
+            desc, widget = self._parse_array(data)
         elif isinstance(data, types.TracebackType):
-            frames = list(map(str.strip, traceback.format_list(traceback.extract_tb(data))))
-            widget = QPlainTextEdit()
-            widget.setPlainText("\n".join(frames))
+            frames = [frame.strip() for frame in traceback.format_list(traceback.extract_tb(data))]
+            widget = QPlainTextEdit("\n".join(frames))
             widget.setMaximumHeight(200)
             widget.setReadOnly(True)
         else:
@@ -166,18 +192,34 @@ class DataTreeWidget(QTreeWidget):
 
         return type_str, desc, childs, widget
 
-    def filter_tree(self, text: str) -> None:
-        """
-        Search the tree for items containing the given text and hide/show them accordingly.
+    def _parse_array(self, data: Any) -> tuple[str, QWidget | None]:
+        desc = f"shape={tuple(data.shape)} dtype={data.dtype}"
+        if _array_size(data) <= _MAX_INLINE_ELEMENTS:
+            table = _array_table(data)
+            table.setMaximumHeight(200)
+            return desc, table
 
-        Args:
-            text (str): The text to search for.
-        """
+        try:
+            summary = f"min={data.min()}, max={data.max()}, mean={float(data.mean()):.2f}"
+        except TypeError, ValueError:
+            summary = f"{_array_size(data)} elements"
+        button = QPushButton(f"Array summary: {summary}")
+        button.clicked.connect(lambda: self.show_full_array(data))
+        return desc, button
+
+    def filter_tree(self, text: str) -> None:
+        """Hide every item whose name does not contain ``text`` (case-insensitive)."""
+        needle = text.lower()
         for item in self._nodes.values():
-            item.setHidden(item.text(0).lower().find(text.lower()) == -1)
+            item.setHidden(needle not in item.text(0).lower())
 
     def toggle_sort(self) -> None:
-        self.sortItems(0, Qt.SortOrder.AscendingOrder)
+        """Sort by name. The first call sorts ascending; later calls alternate the direction."""
+        if self._sort_order == Qt.SortOrder.AscendingOrder:
+            self._sort_order = Qt.SortOrder.DescendingOrder
+        else:
+            self._sort_order = Qt.SortOrder.AscendingOrder
+        self.sortItems(0, self._sort_order)
 
     def show_context_menu(self, pos: QPoint) -> None:
         item = self.itemAt(pos)
@@ -185,85 +227,71 @@ class DataTreeWidget(QTreeWidget):
             return
 
         menu = QMenu(self)
-        copy_name_action = QAction("Copy Name")
-        copy_type_action = QAction("Copy Type")
-        copy_value_action = QAction("Copy Value")
+        clipboard = QApplication.clipboard()
+        for label, column in (("Copy Name", 0), ("Copy Type", 1), ("Copy Value", 2)):
+            action = QAction(label, menu)
+            action.triggered.connect(lambda _=False, col=column: clipboard.setText(item.text(col)))
+            menu.addAction(action)
 
-        menu.addAction(copy_name_action)
-        menu.addAction(copy_type_action)
-        menu.addAction(copy_value_action)
-
-        copy_name_action.triggered.connect(lambda: QApplication.clipboard().setText(item.text(0)))
-        copy_type_action.triggered.connect(lambda: QApplication.clipboard().setText(item.text(1)))
-        copy_value_action.triggered.connect(lambda: QApplication.clipboard().setText(item.text(2)))
         if self._allow_edit:
-            edit_action = QAction("Edit Value")
-            menu.addAction(edit_action)
+            edit_action = QAction("Edit Value", menu)
             edit_action.triggered.connect(lambda: self.edit_item_value(item))
+            menu.addAction(edit_action)
 
         menu.exec(self.mapToGlobal(pos))
 
     def edit_item_value(self, item: QTreeWidgetItem) -> None:
-        """
-        Edit the value of the given item.
-
-        Args:
-            item (QTreeWidgetItem): The item to edit.
-        """
+        """Prompt for a new scalar value (int, float, str or bool) and store it on ``item``."""
         if not self._allow_edit:
             return
         data = item.data(2, ItemDataRole.UserRole)
-        if isinstance(data, (int, float, str, bool)):
-            new_value, ok = QInputDialog.getText(
-                self,
-                "Edit Value",
-                "Enter new value:",
-                text=str(data),
-            )
-            if ok:
-                try:
-                    if isinstance(data, bool):
-                        new_data = new_value.lower() in ("true", "1", "yes")
-                    else:
-                        new_data = type(data)(new_value)
+        if not isinstance(data, (int, float, str, bool)):
+            return
 
-                    item.setData(2, ItemDataRole.UserRole, new_data)
-                    item.setText(2, str(new_data))
-                except ValueError:
-                    QMessageBox.warning(self, "Invalid Input", "Could not convert input to correct type")
+        new_value, ok = QInputDialog.getText(self, "Edit Value", "Enter new value:", text=str(data))
+        if not ok:
+            return
+        try:
+            if isinstance(data, bool):
+                new_data: Any = new_value.lower() in ("true", "1", "yes")
+            else:
+                new_data = type(data)(new_value)
+        except ValueError:
+            QMessageBox.warning(self, "Invalid Input", "Could not convert input to correct type")
+            return
 
-    def toggle_full_text(self, item: QTreeWidgetItem, widget: QWidget) -> None:
-        widget.setVisible(not widget.isVisible())
+        item.setData(2, ItemDataRole.UserRole, new_data)
+        item.setText(2, str(new_data))
 
-    def show_full_array(self, data: npt.NDArray[Any]) -> None:
-        dialog = QDialog()
-        layout = QVBoxLayout()
-        table = pg.TableWidget()
-        table.setData(data)
-        layout.addWidget(table)
-        dialog.setLayout(layout)
+    def show_full_array(self, data: npt.ArrayLike) -> None:
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Array")
+        layout = QVBoxLayout(dialog)
+        layout.addWidget(_array_table(data, dialog))
         dialog.resize(600, 400)
         dialog.exec()
 
 
 class SearchableDataTreeWidget(QWidget):
+    """``DataTreeWidget`` with a search box and a sort button above it."""
+
     def __init__(self, parent: QWidget | None = None, allow_edit: bool = False) -> None:
         super().__init__(parent)
-        layout = QVBoxLayout()
 
-        self.search_bar = QLineEdit()
+        self.search_bar = QLineEdit(self)
+        self.search_bar.setPlaceholderText("Search...")
+        self.search_bar.setClearButtonEnabled(True)
         self.search_bar.textChanged.connect(self.filter_tree)
 
-        self.btn_sort = QPushButton("Sort")
+        self.btn_sort = QPushButton("Sort", self)
         self.btn_sort.clicked.connect(self.toggle_sort)
 
-        self.data_tree = DataTreeWidget(allow_edit=allow_edit)
+        self.data_tree = DataTreeWidget(self, allow_edit=allow_edit)
 
+        layout = QVBoxLayout(self)
         layout.addWidget(self.search_bar)
         layout.addWidget(self.btn_sort)
         layout.addWidget(self.data_tree)
-
-        self.setLayout(layout)
 
     def filter_tree(self, text: str) -> None:
         self.data_tree.filter_tree(text)
@@ -271,7 +299,7 @@ class SearchableDataTreeWidget(QWidget):
     def toggle_sort(self) -> None:
         self.data_tree.toggle_sort()
 
-    def set_data(self, data: dict[str, Any], hide_root: bool = False) -> None:
+    def set_data(self, data: dict[str, Any], hide_root: bool = True) -> None:
         self.data_tree.set_data(data, hide_root)
 
     def collapseAll(self) -> None:

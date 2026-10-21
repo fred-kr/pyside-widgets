@@ -6,12 +6,10 @@ from pyside_widgets.command_bar import CommandBar
 from pyside_widgets.plugins.plugin_base import PluginBase
 
 
-class ToolBarPlugin(PluginBase):
+class CommandBarPlugin(PluginBase, QDesignerCustomWidgetInterface):
     def group(self) -> str:
         return super().group() + " (ToolBar)"
 
-
-class CommandBarPlugin(PluginBase, QDesignerCustomWidgetInterface):
     def createWidget(self, parent: QWidget) -> CommandBar:
         w = CommandBar(parent=parent)
         w.addAction(QAction("Action 1", w))

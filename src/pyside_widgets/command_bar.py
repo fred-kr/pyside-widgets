@@ -1,9 +1,13 @@
 from PySide6.QtCore import Property, QSize, Qt
-from PySide6.QtGui import QAction, QResizeEvent
+from PySide6.QtGui import QAction, QActionEvent, QResizeEvent
 from PySide6.QtWidgets import QToolBar, QWidget
 
 
 class CommandBar(QToolBar):
+    """
+    Non-movable toolbar with text under icons whose buttons either fill the width evenly or align to one side.
+    """
+
     def __init__(
         self,
         parent: QWidget | None = None,
@@ -15,103 +19,74 @@ class CommandBar(QToolBar):
         self.setIconSize(QSize(16, 16))
         self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
 
-        # When fill is True the actions will be stretched to fill the toolbar.
-        # When fill is False the actions will use their sizeHint, and be aligned according to _alignment.
         self._fill = fill
         self._alignment = alignment
 
     def set_fill(self, fill: bool) -> None:
-        """Enable or disable filling the toolbar with evenly distributed buttons."""
-        self._fill = fill
-        self.update()
+        """When True, buttons are stretched to fill the toolbar. When False, they keep their size hint."""
+        if fill != self._fill:
+            self._fill = fill
+            self._relayout()
 
     def get_fill(self) -> bool:
         return self._fill
 
     def set_alignment(self, alignment: Qt.AlignmentFlag) -> None:
-        """Set the alignment for non-fill mode."""
-        self._alignment = alignment
-        self.update()
+        """Side the buttons are packed to when ``fill`` is False. Only AlignLeft and AlignRight are distinguished."""
+        if alignment != self._alignment:
+            self._alignment = alignment
+            self._relayout()
 
     def get_alignment(self) -> Qt.AlignmentFlag:
         return self._alignment
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         super().resizeEvent(event)
+        self._relayout()
+
+    def actionEvent(self, event: QActionEvent) -> None:
+        super().actionEvent(event)
+        self._relayout()
+
+    def _relayout(self) -> None:
         actions = self.actions()
         if not actions:
             return
-
-        total_width = self.width()
-
         if self._fill:
-            self._resize_fill(actions, total_width)
+            self._layout_fill(actions)
         else:
-            self._resize_align(actions, total_width)
+            self._layout_align(actions)
 
-    def _resize_align(self, actions: list[QAction], total_width: int) -> None:
-        # --- NON-FILL MODE: Use each widget's natural size and align the group ---
-        # First, compute the total width required by the visible widgets.
-        total_required_width = 0
-        widget_geometries: list[tuple[QWidget, int]] = []  # Store tuples of (widget, width)
-        for action in actions:
-            widget = self.widgetForAction(action)
-            if not widget:
-                continue
-            w = widget.sizeHint().width()
-            widget_geometries.append((widget, w))
-            total_required_width += w
-
-        # Determine starting x based on alignment.
-        if total_required_width > total_width:
-            # If actions exceed available width, simply start at 0.
-            start_x = 0
-        elif self._alignment == Qt.AlignmentFlag.AlignRight:
-            start_x = total_width - total_required_width
-        else:
-            # Default to left alignment.
-            start_x = 0
-
-        x = start_x
-        for widget, w in widget_geometries:
-            widget.setGeometry(x, 0, w, self.height())
-            x += w
-
-    def _resize_fill(self, actions: list[QAction], total_width: int) -> None:
-        # --- FILL MODE: Evenly distribute non-separator actions across the full width ---
-        non_separator_actions = [a for a in actions if not a.isSeparator()]
-        num_non_separator = len(non_separator_actions)
-
-        # Calculate the total fixed width taken by separator widgets.
-        separator_total_width = 0
-        for action in actions:
-            if action.isSeparator():
-                if widget := self.widgetForAction(action):
-                    separator_total_width += widget.sizeHint().width()
-
-        remaining_width = total_width - separator_total_width
-        if remaining_width < 0:
-            remaining_width = total_width  # Fallback if separators exceed total width
-
-        base_width = remaining_width // num_non_separator if num_non_separator > 0 else 0
-        remainder = remaining_width % num_non_separator if num_non_separator > 0 else 0
+    def _layout_align(self, actions: list[QAction]) -> None:
+        widgets = [(w, w.sizeHint().width()) for a in actions if (w := self.widgetForAction(a)) is not None]
+        required = sum(width for _, width in widgets)
 
         x = 0
-        for action in actions:
-            widget = self.widgetForAction(action)
-            if not widget:
-                continue
+        if required <= self.width() and self._alignment == Qt.AlignmentFlag.AlignRight:
+            x = self.width() - required
+        for widget, width in widgets:
+            widget.setGeometry(x, 0, width, self.height())
+            x += width
 
+    def _layout_fill(self, actions: list[QAction]) -> None:
+        widgets = [(a, w) for a in actions if (w := self.widgetForAction(a)) is not None]
+        separator_width = sum(w.sizeHint().width() for a, w in widgets if a.isSeparator())
+        n_buttons = sum(1 for a, _ in widgets if not a.isSeparator())
+
+        remaining = self.width() - separator_width
+        if remaining < 0:
+            remaining = self.width()
+        base_width, remainder = divmod(remaining, n_buttons) if n_buttons else (0, 0)
+
+        x = 0
+        for action, widget in widgets:
             if action.isSeparator():
-                w = widget.sizeHint().width()
+                width = widget.sizeHint().width()
             else:
-                # Distribute any extra pixel(s) to the first few non-separator buttons.
-                w = base_width + (1 if remainder > 0 else 0)
-                if remainder > 0:
-                    remainder -= 1
-
-            widget.setGeometry(x, 0, w, self.height())
-            x += w
+                width = base_width + (1 if remainder > 0 else 0)
+                remainder -= 1
+            widget.setGeometry(x, 0, width, self.height())
+            x += width
 
     fill = Property(bool, get_fill, set_fill)
     alignment = Property(Qt.AlignmentFlag, get_alignment, set_alignment)

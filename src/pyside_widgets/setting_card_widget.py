@@ -1,14 +1,17 @@
 from typing import Any
 
 from PySide6.QtCore import Property, QSize, Qt, Signal, Slot
-from PySide6.QtGui import QColor, QIcon, QPainter, QPaintEvent
+from PySide6.QtGui import QColor, QIcon, QPainter, QPaintEvent, QPalette
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
-from ._style_sheets import CARD_STYLE_SHEET
-from ._utils import NOTHING, is_dark_theme
+from pyside_widgets._icons import get_icon
+from pyside_widgets._style_sheets import CARD_STYLE_SHEET
+from pyside_widgets._utils import NOTHING
 
 
 class PlaceholderWidget(QFrame):
+    """Stand-in editor shown by ``SettingCard`` when no editor widget is given."""
+
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
@@ -16,14 +19,11 @@ class PlaceholderWidget(QFrame):
         self.setFrameShadow(QFrame.Shadow.Raised)
         self.setLineWidth(1)
 
-        self.label = QLabel(self)
-        self.label.setText("Placeholder")
+        self.label = QLabel("Placeholder", self)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self._layout = QVBoxLayout()
-        self._layout.addWidget(self.label)
-
-        self.setLayout(self._layout)
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.label)
 
     def setPlaceholderText(self, text: str) -> None:
         self.label.setText(text)
@@ -31,10 +31,10 @@ class PlaceholderWidget(QFrame):
 
 class SettingCard(QFrame):
     """
-    A card widget with an icon, title, and text.
+    A card with an icon, title, description, an editor widget and a reset button.
 
-    Pretty much taken 1:1 from `qfluentwidgets.SettingCard`, but with some minor tweaks (also to avoid dependency on the
-    entire `qfluentwidgets` package).
+    Modelled on ``qfluentwidgets.SettingCard`` without the qfluentwidgets dependency. Colors follow the widget palette,
+    so the card works in light and dark themes.
     """
 
     sig_reset_clicked = Signal()
@@ -43,7 +43,7 @@ class SettingCard(QFrame):
         self,
         title: str = "",
         editor_widget: QWidget | None = None,
-        default_value: Any | None = NOTHING,
+        default_value: Any = NOTHING,
         set_value_name: str | None = None,
         description: str = "",
         icon: QIcon | None = None,
@@ -58,17 +58,25 @@ class SettingCard(QFrame):
         self.p_icon_size = QSize(16, 16)
         self.p_reset_button = reset_button
 
+        if editor_widget is None:
+            editor_widget = PlaceholderWidget()
+            if default_value is NOTHING:
+                default_value = "Default Value"
+            set_value_name = set_value_name or "setPlaceholderText"
+        self.editor_widget = editor_widget
+        self._default_value = default_value
+        self._set_value_name = set_value_name
+
         self._title_label = QLabel(self.p_title, self)
         self._description_label = QLabel(self.p_description, self)
+        self._description_label.setObjectName("textLabel")  # targeted by CARD_STYLE_SHEET
+        self._description_label.setForegroundRole(QPalette.ColorRole.PlaceholderText)
         self._icon_label = QLabel(self)
-        self.editor_widget = editor_widget or PlaceholderWidget()
-        self._default_value = default_value if default_value is not NOTHING else "Default Value"
-        self._set_value_name = set_value_name or "setPlaceholderText"
 
         self.btn_reset = QPushButton(self)
         self.btn_reset.setFlat(True)
         self.btn_reset.setToolTip("Reset to default value")
-        self.btn_reset.setIcon(QIcon("://Reset"))
+        self.btn_reset.setIcon(get_icon("ArrowReset"))
         self.btn_reset.clicked.connect(self._on_reset_clicked)
 
         self.h_layout = QHBoxLayout(self)
@@ -107,9 +115,7 @@ class SettingCard(QFrame):
         editor_layout = QHBoxLayout()
         editor_layout.setContentsMargins(0, 0, 0, 0)
         editor_layout.setSpacing(0)
-
         editor_layout.addStretch(1)
-
         editor_layout.addWidget(self.editor_widget, 1, Qt.AlignmentFlag.AlignRight)
 
         self.h_layout.addLayout(editor_layout, 1)
@@ -117,9 +123,6 @@ class SettingCard(QFrame):
 
         self.h_layout.addWidget(self.btn_reset)
         self.h_layout.addSpacing(16)
-
-        # Set name so that it can be found in stylesheet
-        self._description_label.setObjectName("textLabel")
 
         self.setStyleSheet(CARD_STYLE_SHEET)
 
@@ -135,10 +138,7 @@ class SettingCard(QFrame):
 
     def set_description(self, text: str) -> None:
         self.p_description = text
-        if text:
-            self.setFixedHeight(70)
-        else:
-            self.setFixedHeight(50)
+        self.setFixedHeight(70 if text else 50)
         self._description_label.setText(text)
         self._description_label.setVisible(bool(text))
 
@@ -151,6 +151,7 @@ class SettingCard(QFrame):
             self._icon_label.hide()
             return
         self._icon_label.setPixmap(icon.pixmap(self.p_icon_size))
+        self._icon_label.show()
 
     def get_reset_shown(self) -> bool:
         return self.p_reset_button
@@ -164,13 +165,16 @@ class SettingCard(QFrame):
 
     def set_icon_size(self, size: QSize) -> None:
         self.p_icon_size = size
-        self._icon_label.setFixedSize(self.p_icon_size)
+        self._icon_label.setFixedSize(size)
+        if not self.p_icon.isNull():
+            self._icon_label.setPixmap(self.p_icon.pixmap(size))
 
     def paintEvent(self, arg__1: QPaintEvent) -> None:
         painter = QPainter(self)
         painter.setRenderHints(QPainter.RenderHint.Antialiasing)
 
-        if is_dark_theme():
+        is_dark = self.palette().color(QPalette.ColorRole.Window).lightness() < 128
+        if is_dark:
             painter.setBrush(QColor(255, 255, 255, 13))
             painter.setPen(QColor(0, 0, 0, 50))
         else:
@@ -181,10 +185,7 @@ class SettingCard(QFrame):
 
     @Slot()
     def _on_reset_clicked(self) -> None:
-        """
-        Emits the `sig_reset_clicked` signal. If a default value and setter function have been set,
-        calls the setter function with the default value.
-        """
+        """Emit ``sig_reset_clicked`` and, if a default value and setter name were given, apply the default."""
         self.sig_reset_clicked.emit()
         if self._default_value is NOTHING or not self._set_value_name:
             return

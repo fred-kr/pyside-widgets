@@ -1,6 +1,6 @@
 [project]
 name = "pyside-widgets"
-version = "0.3.0"
+version = "0.4.0"
 description = "A collection of custom PySide6 widgets along with plugins for Qt Designer."
 readme = "README.md"
 authors = [
@@ -8,10 +8,11 @@ authors = [
 ]
 requires-python = ">=3.14"
 dependencies = [
-    "darkdetect>=0.8.0",
-    "numpy>=2.4.4",
-    "pyqtgraph>=0.14.0",
-    "pyside6>=6.11.0",
+    "pyside6>=6.12.0",
+]
+
+[project.optional-dependencies]
+jupyter = [
     "qtconsole>=5.7.2",
 ]
 
@@ -19,8 +20,37 @@ dependencies = [
 demo = "pyside_widgets.examples.widget_gallery:main"
 designer = "pyside_widgets.examples.designer:run"
 
+[project.entry-points.pyinstaller40]
+# Lets PyInstaller find the hook that bundles the SVG icons when an application using this package is frozen.
+hook-dirs = "pyside_widgets.__pyinstaller:get_hook_dirs"
+
+[dependency-groups]
+dev = [
+    "numpy>=2.5.4",
+    "pyright>=1.1.400",
+    "pytest>=9.1.1",
+    "pytest-qt>=4.5.0",
+    "qtconsole>=5.7.2",
+    "ruff>=0.12.0",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+qt_api = "pyside6"
 
+[tool.ruff]
+line-length = 120
+target-version = "py314"
+extend-exclude = ["src/pyside_widgets/__pyinstaller/hook-*.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pyright]
+include = ["src", "tests"]
+exclude = ["src/pyside_widgets/__pyinstaller"]
+pythonVersion = "3.14"

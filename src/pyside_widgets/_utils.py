@@ -1,19 +1,6 @@
 import enum
 
-import darkdetect
-from PySide6 import QtGui, QtWidgets
-
-
-class Theme(enum.Enum):
-    LIGHT = "Light"
-    DARK = "Dark"
-    AUTO = "Auto"
-
-
-def is_dark_theme() -> bool:
-    t = darkdetect.theme()
-    t = Theme(t) if t else Theme.LIGHT
-    return t == Theme.DARK
+from PySide6.QtGui import QColor
 
 
 class _Nothing(enum.Enum):
@@ -27,27 +14,12 @@ class _Nothing(enum.Enum):
 
 
 NOTHING = _Nothing.NOTHING
+"""Sentinel for "no value given", distinct from ``None``."""
 
 
-def set_font(
-    widget: QtWidgets.QWidget | QtGui.QStandardItem,
-    font_size: int = 14,
-    weight: QtGui.QFont.Weight = QtGui.QFont.Weight.Normal,
-    family: str = "Segoe UI",
-) -> None:
-    font = widget.font()
-    font.setPointSize(font_size)
-    font.setWeight(weight)
-    font.setFamily(family)
-    widget.setFont(font)
-
-
-def get_text_color(background_color: QtGui.QColor) -> QtGui.QColor:
-    """
-    Determines an appropriate text color (black or white) that contrasts well with the given background color.
-    """
+def get_text_color(background_color: QColor) -> QColor:
+    """Return black or white, whichever contrasts better with ``background_color``."""
     luminance = (
         (background_color.red() * 299) + (background_color.green() * 587) + (background_color.blue() * 114)
     ) // 1000
-
-    return QtGui.QColor(255, 255, 255) if luminance < 128 else QtGui.QColor(0, 0, 0)
+    return QColor(255, 255, 255) if luminance < 128 else QColor(0, 0, 0)

@@ -2,32 +2,27 @@ import re
 
 from PySide6.QtDesigner import QDesignerFormEditorInterface
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QWidget
+
+_CAMEL_CASE_BOUNDARY = re.compile(r"(?<!^)(?=[A-Z])")
 
 
 class PluginBase:
-    Factory = None
+    """
+    Defaults shared by the Designer plugins.
 
-    def __init__(self, parent: QWidget | None = None) -> None:
+    Subclasses combine it with ``QDesignerCustomWidgetInterface`` and implement ``createWidget``, ``name`` and,
+    usually, ``domXml``.
+    """
+
+    def __init__(self) -> None:
         super().__init__()
-        self.initialized = False
-        self.factory = None
-        self.pattern = re.compile(r"(?<!^)(?=[A-Z])")
+        self._initialized = False
 
     def initialize(self, editor: QDesignerFormEditorInterface) -> None:
-        if self.initialized:
-            return
-
-        self.initialized = True
-        if not self.Factory:
-            return
-
-        manager = editor.extensionManager()
-        self.factory = self.Factory(manager)
-        manager.registerExtensions(self.factory, self.factory.IID)
+        self._initialized = True
 
     def isInitialized(self) -> bool:
-        return self.initialized
+        return self._initialized
 
     def icon(self) -> QIcon:
         return QIcon()
@@ -39,8 +34,8 @@ class PluginBase:
         return "pyside-widgets"
 
     def toolTip(self) -> str:
-        name = self.pattern.sub(" ", self.name()).lower()
-        return name[0].upper() + name[1:]
+        words = _CAMEL_CASE_BOUNDARY.sub(" ", self.name())
+        return words[0].upper() + words[1:].lower()
 
     def whatsThis(self) -> str:
         return self.toolTip()

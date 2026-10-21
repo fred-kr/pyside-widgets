@@ -149,12 +149,3 @@ class GroupedComboBoxDelegate(QtWidgets.QStyledItemDelegate):
             return False  # Prevent selection of non-child items
 
         return super().editorEvent(event, model, option, index)
-
-
-if __name__ == "__main__":
-    import sys
-
-    app = QtWidgets.QApplication(sys.argv)
-    window = GroupedComboBox()
-    window.show()
-    sys.exit(app.exec())

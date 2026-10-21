@@ -1,8 +1,10 @@
-import enum
-import types
+"""Tabbed demo of every widget in the package. Run with ``uv run demo``."""
 
-import numpy as np
-import pyqtgraph as pg
+import enum
+import sys
+import types
+from typing import Any
+
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from pyside_widgets import (
@@ -13,13 +15,14 @@ from pyside_widgets import (
     DecimalSpinBox,
     EnumComboBox,
     GroupedComboBox,
-    JupyterConsoleWindow,
     LabeledSlider,
     OverlayWidget,
+    ResizableMessageBox,
     SearchableDataTreeWidget,
     SettingCard,
     ToggleSwitch,
 )
+from pyside_widgets._icons import get_icon
 
 
 class EnumA(enum.Enum):
@@ -35,42 +38,59 @@ class SettingEnum(enum.Enum):
     SETTING_C = enum.auto()
 
 
-def example_func1() -> types.TracebackType | None:
-    return example_func2()
-
-
-def example_func2() -> types.TracebackType | None:
+def _make_traceback() -> types.TracebackType | None:
     try:
         raise ValueError("Some error")
     except ValueError:
-        import sys
-
         return sys.exc_info()[2]
 
 
-example_data = {
-    "a list": [1, 2, 3, 4, 5, 6, {"nested1": "aaaaa", "nested2": "bbbbb"}, "seven"],
-    "a dict": {"x": 1, "y": 2, "z": "three"},
-    "an array": np.random.randint(10, size=(40, 10)),
-    "a traceback": example_func2(),
-    "a function": example_func1,
-    "a class": DataTreeWidget,
-}
+def _make_exception() -> ZeroDivisionError:
+    try:
+        raise ZeroDivisionError("division by zero")
+    except ZeroDivisionError as exc:
+        return exc
+
+
+def _example_data() -> dict[str, Any]:
+    data: dict[str, Any] = {
+        "a list": [1, 2, 3, 4, 5, 6, {"nested1": "aaaaa", "nested2": "bbbbb"}, "seven"],
+        "a dict": {"x": 1, "y": 2, "z": "three"},
+        "a long string": "lorem ipsum " * 20,
+        "a traceback": _make_traceback(),
+        "a function": _make_traceback,
+        "a class": DataTreeWidget,
+    }
+    try:
+        import numpy as np
+    except ImportError:
+        return data
+    rng = np.random.default_rng(0)
+    data["a small array"] = rng.integers(10, size=(40, 10))
+    data["a large array"] = rng.normal(size=100_000)
+    return data
+
+
+def _vbox_tab(*widgets: QtWidgets.QWidget, stretch_last: bool = False) -> QtWidgets.QWidget:
+    container = QtWidgets.QWidget()
+    layout = QtWidgets.QVBoxLayout(container)
+    for i, widget in enumerate(widgets):
+        is_last = i == len(widgets) - 1
+        layout.addWidget(widget, 1 if (stretch_last and is_last) else 0)
+    if not stretch_last:
+        layout.addStretch()
+    return container
 
 
 def main() -> None:
-    # print(QtWidgets.QStyleFactory.keys())
     QtWidgets.QApplication.setStyle("Fusion")
     app = QtWidgets.QApplication([])
 
     window = QtWidgets.QMainWindow()
     window.setWindowTitle("Widget Gallery")
-
-    tab_widget = QtWidgets.QTabWidget()
+    tabs = QtWidgets.QTabWidget()
 
     # GroupedComboBox
-    grouped_cb_container = QtWidgets.QWidget()
-    grouped_cb_layout = QtWidgets.QVBoxLayout(grouped_cb_container)
     grouped_combo_box = GroupedComboBox()
     grouped_combo_box.add_parent_item("Group 1")
     grouped_combo_box.add_child_item("Item 1", EnumA.A)
@@ -85,47 +105,34 @@ def main() -> None:
     grouped_combo_box.currentIndexChanged.connect(
         lambda: print(f"Selected item: {grouped_combo_box.currentText()}, item data: {grouped_combo_box.currentData()}")
     )
+    tabs.addTab(_vbox_tab(grouped_combo_box), "GroupedComboBox")
 
-    grouped_cb_layout.addWidget(grouped_combo_box)
-    grouped_cb_layout.addStretch()
-    tab_widget.addTab(grouped_cb_container, "GroupedComboBox")
-
-    # JupyterConsoleWindow
-    jupyter_console = JupyterConsoleWindow(style="lightbg")
-    jupyter_console.console.execute("print('Hello from Jupyter Console!')", True)
-    tab_widget.addTab(jupyter_console, "JupyterConsoleWindow")
+    # JupyterConsoleWindow (optional dependency)
+    try:
+        from pyside_widgets import JupyterConsoleWindow
+    except ImportError:
+        tabs.addTab(_vbox_tab(QtWidgets.QLabel("Install the 'jupyter' extra to see the console.")), "Jupyter")
+    else:
+        jupyter_console = JupyterConsoleWindow(style="lightbg", namespace={"app": app, "window": window})
+        jupyter_console.console.execute("print('Hello from Jupyter Console!')", True)
+        tabs.addTab(jupyter_console, "JupyterConsoleWindow")
 
     # OverlayWidget
     base_widget = QtWidgets.QTextEdit("This is the base widget")
     overlay_widget = OverlayWidget(parent=base_widget)
     overlay_button = QtWidgets.QPushButton("Toggle Overlay")
-    overlay_button.clicked.connect(
-        lambda: overlay_widget.hide_overlay() if overlay_widget.isVisible() else overlay_widget.show_overlay()
-    )
-    overlay_button_container = QtWidgets.QWidget()
-    layout_overlay = QtWidgets.QVBoxLayout(overlay_button_container)
-    layout_overlay.addWidget(overlay_button)
-    layout_overlay.addWidget(base_widget)
-
-    tab_widget.addTab(overlay_button_container, "OverlayWidget")
+    overlay_button.clicked.connect(lambda: overlay_widget.toggle_overlay(not overlay_widget.isVisible()))
+    tabs.addTab(_vbox_tab(overlay_button, base_widget, stretch_last=True), "OverlayWidget")
 
     # EnumComboBox
-    enum_cb_container = QtWidgets.QWidget()
-    enum_cb_layout = QtWidgets.QVBoxLayout(enum_cb_container)
     enum_combo_box = EnumComboBox(enum_class=EnumA)
     enum_combo_box_2 = EnumComboBox(enum_class=SettingEnum, allow_none=True)
+    enum_combo_box_2.sig_current_enum_changed.connect(lambda value: print(f"Selected enum: {value}"))
+    btn_toggle_none = QtWidgets.QPushButton("Toggle allowNone on second combo box")
+    btn_toggle_none.clicked.connect(lambda: enum_combo_box_2.setAllowNone(not enum_combo_box_2.allowNone))
+    tabs.addTab(_vbox_tab(btn_toggle_none, enum_combo_box, enum_combo_box_2), "EnumComboBox")
 
-    btn_change_enum_class = QtWidgets.QPushButton("Change enum class")
-    btn_change_enum_class.clicked.connect(lambda: enum_combo_box.set_enum_class(None))
-
-    enum_cb_layout.addWidget(btn_change_enum_class)
-    enum_cb_layout.addWidget(enum_combo_box, 1)
-    enum_cb_layout.addWidget(enum_combo_box_2, 1)
-    enum_cb_layout.addStretch()
-    tab_widget.addTab(enum_cb_container, "EnumComboBox")
     # SettingCard
-    setting_card_container = QtWidgets.QWidget()
-    setting_card_layout = QtWidgets.QVBoxLayout(setting_card_container)
     setting_widget = EnumComboBox(enum_class=SettingEnum)
     setting_card = SettingCard(
         title="Example Setting",
@@ -133,192 +140,136 @@ def main() -> None:
         default_value=SettingEnum.DEFAULT,
         set_value_name="set_current_enum",
         description="This is a setting card with EnumComboBox as the editor widget",
-        icon=QtGui.QIcon.fromTheme(QtGui.QIcon.ThemeIcon.Computer),
-        reset_button=True,
+        icon=get_icon("Settings"),
     )
+    tabs.addTab(_vbox_tab(setting_card), "SettingCard")
 
-    setting_card_layout.addWidget(setting_card, 1, alignment=QtCore.Qt.AlignmentFlag.AlignLeft)
-    setting_card_layout.addStretch()
-    tab_widget.addTab(setting_card_container, "SettingCard")
-
-    # DataTreeWidget
-    data_tree_container = QtWidgets.QWidget()
-    data_tree_layout = QtWidgets.QVBoxLayout(data_tree_container)
-    data_tree = DataTreeWidget(data=example_data)
-    data_tree_layout.addWidget(data_tree)
-    data_tree_layout.addStretch()
-    tab_widget.addTab(data_tree_container, "DataTreeWidget")
-
-    # SearchableDataTreeWidget
-    searchable_data_tree_container = QtWidgets.QWidget()
-    searchable_data_tree_layout = QtWidgets.QVBoxLayout(searchable_data_tree_container)
-    searchable_data_tree = SearchableDataTreeWidget()
-    searchable_data_tree.set_data(example_data)
-    searchable_data_tree_layout.addWidget(searchable_data_tree)
-    searchable_data_tree_layout.addStretch()
-    tab_widget.addTab(searchable_data_tree_container, "SearchableDataTreeWidget")
+    # DataTreeWidget / SearchableDataTreeWidget
+    tabs.addTab(_vbox_tab(DataTreeWidget(data=_example_data()), stretch_last=True), "DataTreeWidget")
+    searchable_data_tree = SearchableDataTreeWidget(allow_edit=True)
+    searchable_data_tree.set_data(_example_data())
+    tabs.addTab(_vbox_tab(searchable_data_tree, stretch_last=True), "SearchableDataTreeWidget")
 
     # DecimalSpinBox
-    decimal_spin_box_container = QtWidgets.QWidget()
-    decimal_spin_box_layout = QtWidgets.QVBoxLayout()
     decimal_spin_box = DecimalSpinBox()
     decimal_spin_box.setRange(0, 100)
     decimal_spin_box.setDecimals(2)
     decimal_spin_box.setValue(50.25)
+    decimal_spin_box.setSuffix(" mm")
     decimal_spin_box.setKeyboardTracking(False)
 
     output = QtWidgets.QTextEdit()
     output.setReadOnly(True)
-
-    decimal_spin_box.valueChanged.connect(lambda value: output.append(str(value)))  # type: ignore
+    decimal_spin_box.valueChanged.connect(lambda value: output.append(str(value)))
 
     min_input = LabeledSlider(title="Minimum", title_pos=LabeledSlider.TitleLabelPosition.TOP_LEFT)
     min_input.setRange(-1_000, 1_000)
-    min_input.setSingleStep(10)
     min_input.setValue(0)
     min_input.valueChanged.connect(decimal_spin_box.setMinimum)
 
     max_input = LabeledSlider(title="Maximum", title_pos=LabeledSlider.TitleLabelPosition.TOP_CENTER)
-    # max_input.title_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft | QtCore.Qt.AlignmentFlag.AlignBottom)
     max_input.setRange(-1_000, 1_000)
-    max_input.setSingleStep(10)
     max_input.setValue(100)
     max_input.valueChanged.connect(decimal_spin_box.setMaximum)
 
     step_input = LabeledSlider(title="Step Size", title_pos=LabeledSlider.TitleLabelPosition.LEFT)
     step_input.setRange(1, 1_000)
-    step_input.setSingleStep(10)
     step_input.setValue(10)
     step_input.valueChanged.connect(decimal_spin_box.setSingleStep)
 
+    decimals_input = LabeledSlider(title="Decimals", title_pos=LabeledSlider.TitleLabelPosition.LEFT)
+    decimals_input.setRange(0, 6)
+    decimals_input.setValue(2)
+    decimals_input.valueChanged.connect(decimal_spin_box.setDecimals)
+
     kbdtracking_input = QtWidgets.QCheckBox("Keyboard Tracking")
-    kbdtracking_input.setChecked(False)
-    kbdtracking_input.checkStateChanged.connect(
-        lambda: decimal_spin_box.setKeyboardTracking(kbdtracking_input.isChecked())
-    )
+    kbdtracking_input.toggled.connect(decimal_spin_box.setKeyboardTracking)
 
     correction_method_input = EnumComboBox(enum_class=QtWidgets.QAbstractSpinBox.CorrectionMode)
-    correction_method_input.setCurrentIndex(0)
-    correction_method_input.sig_current_enum_changed.connect(lambda value: decimal_spin_box.setCorrectionMode(value))
+    correction_method_input.sig_current_enum_changed.connect(decimal_spin_box.setCorrectionMode)
 
-    controls_layout = QtWidgets.QVBoxLayout()
-    controls_layout.addWidget(min_input)
-    controls_layout.addWidget(max_input)
-    controls_layout.addWidget(step_input)
-    controls_layout.addWidget(kbdtracking_input)
-    controls_layout.addWidget(correction_method_input)
-
-    decimal_spin_box_layout.addWidget(decimal_spin_box)
-    decimal_spin_box_layout.addWidget(output)
-    decimal_spin_box_layout.addLayout(controls_layout)
-    decimal_spin_box_layout.addStretch()
-    decimal_spin_box_container.setLayout(decimal_spin_box_layout)
-
-    tab_widget.addTab(decimal_spin_box_container, "DecimalSpinBox")
-
-    # pyqtgraph.SpinBox
-    spin_box_container = QtWidgets.QWidget()
-    spin_box_layout = QtWidgets.QVBoxLayout()
-    spin_box = pg.SpinBox(compactHeight=False)
-    spin_box.setRange(-1_000, 1_000)
-    spin_box.setSingleStep(10)
-    spin_box.setValue(50)
-
-    output = QtWidgets.QTextEdit()
-    output.setReadOnly(True)
-
-    spin_box.valueChanged.connect(lambda value: output.append(str(value)))
-
-    spin_box_layout.addWidget(spin_box)
-    spin_box_layout.addWidget(output)
-    spin_box_layout.addStretch()
-    spin_box_container.setLayout(spin_box_layout)
-
-    tab_widget.addTab(spin_box_container, "pyqtgraph.SpinBox")
+    tabs.addTab(
+        _vbox_tab(
+            decimal_spin_box,
+            output,
+            min_input,
+            max_input,
+            step_input,
+            decimals_input,
+            kbdtracking_input,
+            correction_method_input,
+        ),
+        "DecimalSpinBox",
+    )
 
     # LabeledSlider
-    labeled_slider_container = QtWidgets.QWidget()
-    labeled_slider_layout = QtWidgets.QVBoxLayout()
     labeled_slider_1 = LabeledSlider(title="Slider 1", title_pos=LabeledSlider.TitleLabelPosition.TOP_LEFT)
     labeled_slider_1.setRange(-1_000, 1_000)
-    labeled_slider_2 = LabeledSlider(title="Slider 2", title_pos=LabeledSlider.TitleLabelPosition.TOP_CENTER)
-    labeled_slider_3 = LabeledSlider(title="Slider 3", title_pos=LabeledSlider.TitleLabelPosition.TOP_RIGHT)
+    labeled_slider_2 = LabeledSlider(title="Slider 2", title_pos=LabeledSlider.TitleLabelPosition.BOTTOM_CENTER)
+    labeled_slider_3 = LabeledSlider(title="Slider 3", title_pos=LabeledSlider.TitleLabelPosition.RIGHT)
     labeled_slider_3.setRange(0, 1000)
-    labeled_slider_3.setSingleStep(100)
-    labeled_slider_3.setTickPosition(QtWidgets.QSlider.TickPosition.TicksBelow)
-    labeled_slider_layout.addWidget(labeled_slider_1)
-    labeled_slider_layout.addWidget(labeled_slider_2)
-    labeled_slider_layout.addWidget(labeled_slider_3)
-    labeled_slider_layout.addStretch()
-    labeled_slider_container.setLayout(labeled_slider_layout)
-
-    tab_widget.addTab(labeled_slider_container, "LabeledSlider")
+    labeled_slider_3.slider.setSingleStep(100)
+    labeled_slider_3.slider.setTickPosition(QtWidgets.QSlider.TickPosition.TicksBelow)
+    tabs.addTab(_vbox_tab(labeled_slider_1, labeled_slider_2, labeled_slider_3), "LabeledSlider")
 
     # ColorPickerButton
-    color_picker_container = QtWidgets.QWidget()
-    color_picker_layout = QtWidgets.QVBoxLayout()
     color_picker = ColorPickerButton()
     color_picker.setFlat(True)
     color_picker.sig_color_changed.connect(lambda color: print(f"Color 1: {color.name()}"))
 
-    color_picker2 = ColorPickerButton()
-    color_picker2.set_show_alpha_channel(True)
-    color_picker2.set_show_text(True)
+    color_picker2 = ColorPickerButton(show_alpha=True, show_icon=False)
     color_picker2.sig_color_changed.connect(
         lambda color: print(f"Color 2: {color.name(QtGui.QColor.NameFormat.HexArgb)}")
     )
 
-    btn_set_invalid_color = QtWidgets.QPushButton("Set Invalid Color")
+    btn_set_invalid_color = QtWidgets.QPushButton("Set Invalid Color (ignored)")
     btn_set_invalid_color.clicked.connect(lambda: color_picker.set_color(QtGui.QColor("invalid_color")))
+    tabs.addTab(_vbox_tab(color_picker, color_picker2, btn_set_invalid_color), "ColorPickerButton")
 
-    color_picker_layout.addWidget(color_picker, alignment=QtCore.Qt.AlignmentFlag.AlignHCenter)
-    color_picker_layout.addWidget(color_picker2, alignment=QtCore.Qt.AlignmentFlag.AlignHCenter)
-    color_picker_layout.addWidget(btn_set_invalid_color, alignment=QtCore.Qt.AlignmentFlag.AlignHCenter)
-    color_picker_layout.addStretch()
-    color_picker_container.setLayout(color_picker_layout)
-
-    tab_widget.addTab(color_picker_container, "ColorPickerButton")
-
-    # Toggle / AnimatedToggle
-    toggle_button_container = QtWidgets.QWidget()
-    toggle_button_layout = QtWidgets.QVBoxLayout()
-
+    # ToggleSwitch / AnimatedToggleSwitch
     toggle = ToggleSwitch()
-    toggle_button = AnimatedToggleSwitch(checked_color="#1abc9c", pulse_checked_color="#4400B0EE")
-
-    toggle_button_layout.addWidget(toggle)
-    toggle_button_layout.addWidget(toggle_button)
-
-    toggle_button_layout.addStretch()
-    toggle_button_container.setLayout(toggle_button_layout)
-
-    tab_widget.addTab(toggle_button_container, "Toggle / AnimatedToggle")
+    animated_toggle = AnimatedToggleSwitch(checked_color="#1abc9c", pulse_checked_color="#4400B0EE")
+    tabs.addTab(_vbox_tab(toggle, animated_toggle), "Toggle / AnimatedToggle")
 
     # CommandBar
-    command_bar_container = QtWidgets.QWidget()
-    command_bar_layout = QtWidgets.QVBoxLayout()
     command_bar = CommandBar()
-    action1 = QtGui.QAction(QtGui.QIcon("://More"), "Action 1")
-    action2 = QtGui.QAction("Action 2")
-    action3 = QtGui.QAction("Action 3")
-    hidden_action = QtGui.QAction("Hidden Action")
-    action1.triggered.connect(lambda: print("Action 1 triggered"))
-    action2.triggered.connect(lambda: print("Action 2 triggered"))
-    action3.triggered.connect(lambda: print("Action 3 triggered"))
-    hidden_action.triggered.connect(lambda: print("Hidden Action triggered"))
-
+    action1 = QtGui.QAction(get_icon("MoreHorizontal"), "Action 1", command_bar)
+    action2 = QtGui.QAction(get_icon("Settings"), "Action 2", command_bar)
+    action3 = QtGui.QAction(get_icon("ArrowReset"), "Action 3", command_bar)
+    for action in (action1, action2, action3):
+        action.triggered.connect(lambda _=False, a=action: print(f"{a.text()} triggered"))
     command_bar.addActions([action1, action2])
     command_bar.addSeparator()
     command_bar.addAction(action3)
 
-    command_bar_layout.addWidget(command_bar)
-    command_bar_layout.addStretch()
-    command_bar_container.setLayout(command_bar_layout)
+    fill_toggle = QtWidgets.QCheckBox("Fill")
+    fill_toggle.setChecked(True)
+    fill_toggle.toggled.connect(command_bar.set_fill)
+    align_right = QtWidgets.QCheckBox("Align right (when not filling)")
+    align_right.toggled.connect(
+        lambda checked: command_bar.set_alignment(
+            QtCore.Qt.AlignmentFlag.AlignRight if checked else QtCore.Qt.AlignmentFlag.AlignLeft
+        )
+    )
+    tabs.addTab(_vbox_tab(command_bar, fill_toggle, align_right), "CommandBar")
 
-    tab_widget.addTab(command_bar_container, "CommandBar")
+    # ResizableMessageBox
+    btn_info = QtWidgets.QPushButton("Information")
+    btn_info.clicked.connect(lambda: ResizableMessageBox.information(window, "Information", "Everything is fine."))
+    btn_question = QtWidgets.QPushButton("Question")
+    btn_question.clicked.connect(
+        lambda: print("Answer:", ResizableMessageBox.question(window, "Question", "Continue?"))
+    )
+    btn_exception = QtWidgets.QPushButton("Exception with traceback")
+    btn_exception.clicked.connect(
+        lambda: ResizableMessageBox.from_exception(
+            window, "Unhandled Exception", "An unexpected error occurred.", _make_exception()
+        )
+    )
+    tabs.addTab(_vbox_tab(btn_info, btn_question, btn_exception), "ResizableMessageBox")
 
-    window.setCentralWidget(tab_widget)
-    window.resize(1920, 1080)
+    window.setCentralWidget(tabs)
+    window.resize(1200, 800)
     window.show()
     app.exec()
 

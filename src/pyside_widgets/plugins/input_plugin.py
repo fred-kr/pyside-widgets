@@ -46,17 +46,17 @@ class DecimalSpinBoxPlugin(InputPlugin, QDesignerCustomWidgetInterface):
         return """
         <ui language='c++'>
             <widget class='DecimalSpinBox' name='decimalSpinBox'>
-                <property name='decimals'>
+                <property name='decimalPlaces'>
                     <number>2</number>
                 </property>
-                <property name='minimum'>
-                    <number>0</number>
+                <property name='minimumValue'>
+                    <double>0.0</double>
                 </property>
-                <property name='maximum'>
-                    <number>100</number>
+                <property name='maximumValue'>
+                    <double>100.0</double>
                 </property>
-                <property name='singleStep'>
-                    <number>1</number>
+                <property name='stepSize'>
+                    <double>1.0</double>
                 </property>
             </widget>
         </ui>
@@ -87,27 +87,13 @@ class EnumComboBoxPlugin(InputPlugin, QDesignerCustomWidgetInterface):
     def toolTip(self) -> str:
         return "QComboBox variant that uses a python Enum class to populate the combo box items."
 
-    def whatsThis(self) -> str:
-        return self.toolTip()
-
 
 class ToggleSwitchPlugin(InputPlugin, QDesignerCustomWidgetInterface):
     def createWidget(self, parent: QWidget) -> ToggleSwitch:
         return ToggleSwitch(parent=parent)
-
-    # def domXml(self) -> str:
-    #     return """
-    #     <ui language='c++'>
-    #         <widget class='ToggleSwitch' name='toggleSwitch'>
-    #         </widget>
-    #     </ui>
-    #     """
 
     def name(self) -> str:
         return "ToggleSwitch"
 
     def toolTip(self) -> str:
         return "QCheckBox displayed as a toggle switch"
-
-    def whatsThis(self) -> str:
-        return self.toolTip()

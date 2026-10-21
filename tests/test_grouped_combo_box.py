@@ -1,7 +1,15 @@
 import pytest
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from pyside_widgets.grouped_combo_box import GroupedComboBox, ItemType, ItemTypeRole
+
+
+def _item(combo_box: GroupedComboBox, row: int) -> QtGui.QStandardItem:
+    model = combo_box.model()
+    assert isinstance(model, QtGui.QStandardItemModel)
+    item = model.item(row)
+    assert item is not None
+    return item
 
 
 @pytest.fixture
@@ -15,16 +23,14 @@ def combo_box(qtbot) -> GroupedComboBox:
 
 def test_add_separator(combo_box: GroupedComboBox):
     combo_box.add_separator()
-    model = combo_box.model()
-    item = model.item(0)
+    item = _item(combo_box, 0)
     assert item.data(ItemTypeRole) == ItemType.SEPARATOR
     assert not (item.flags() & QtCore.Qt.ItemFlag.ItemIsSelectable)
 
 
 def test_add_parent_item(combo_box: GroupedComboBox):
     combo_box.add_parent_item("Parent")
-    model = combo_box.model()
-    item = model.item(0)
+    item = _item(combo_box, 0)
     assert item.data(ItemTypeRole) == ItemType.PARENT
     assert not (item.flags() & QtCore.Qt.ItemFlag.ItemIsSelectable)
     assert item.font().bold()
@@ -33,8 +39,7 @@ def test_add_parent_item(combo_box: GroupedComboBox):
 def test_add_child_item(combo_box: GroupedComboBox):
     test_data = {"key": "value"}
     combo_box.add_child_item("Child", test_data)
-    model = combo_box.model()
-    item = model.item(0)
+    item = _item(combo_box, 0)
     assert item.data(ItemTypeRole) == ItemType.CHILD
     assert item.flags() & QtCore.Qt.ItemFlag.ItemIsSelectable
     assert item.data(QtCore.Qt.ItemDataRole.UserRole) == test_data

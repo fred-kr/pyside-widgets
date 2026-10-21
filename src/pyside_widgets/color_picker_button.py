@@ -7,7 +7,7 @@ from pyside_widgets._utils import get_text_color
 
 class ColorPickerButton(QPushButton):
     """
-    A button that opens a color picker dialog when clicked.
+    A button that shows a color and opens a color dialog when clicked.
     """
 
     sig_color_changed = Signal(QColor)
@@ -22,78 +22,66 @@ class ColorPickerButton(QPushButton):
     ) -> None:
         super().__init__(parent)
 
-        self._default_color = super().palette().color(QPalette.ColorRole.Accent)
-        self._color = color or self._default_color
+        self._color = color or self.palette().color(QPalette.ColorRole.Accent)
         self._show_alpha = show_alpha
         self._show_icon = show_icon
         self._show_text = show_text
 
         self.set_color(self._color)
-        self.pressed.connect(self._on_clicked)
+        self.clicked.connect(self._on_clicked)
 
     @property
     def text_fmt(self) -> QColor.NameFormat:
-        """Returns the appropriate color name format based on the visibility of the alpha channel."""
+        """Color name format for the button text, with or without alpha."""
         return QColor.NameFormat.HexArgb if self._show_alpha else QColor.NameFormat.HexRgb
 
     def get_show_alpha_channel(self) -> bool:
-        """Whether to show the alpha channel in the color picker."""
+        """Whether the color dialog offers an alpha channel and the text includes it."""
         return self._show_alpha
 
     def set_show_alpha_channel(self, value: bool) -> None:
-        """Setter of property `showAlphaChannel`."""
         self._show_alpha = value
-        self.set_color(self._color)
+        self._refresh()
 
     def get_show_as_icon(self) -> bool:
-        """Whether to show the current color as an icon or as the button background color."""
+        """Whether the color is shown as an icon (True) or as the button background (False)."""
         return self._show_icon
 
     def set_show_as_icon(self, value: bool) -> None:
-        """Setter of property `showAsIcon`."""
         self._show_icon = value
-        self.set_color(self._color)
+        self._refresh()
 
     def get_show_text(self) -> bool:
-        """Whether to show the current color's name in Hex(A)RGB format as the button text."""
+        """Whether the color name is shown as the button text."""
         return self._show_text
 
     def set_show_text(self, value: bool) -> None:
-        """Setter of property `showText`."""
         self._show_text = value
-        self.set_color(self._color)
+        self._refresh()
 
     def set_color(self, color: QColor) -> None:
-        """Sets the current color of the button.
-
-        Emits `sig_color_changed` if the color actually changes.
-
-        Args:
-            color: The new color to set.
-        """
+        """Set the current color. Invalid colors are ignored. Emits ``sig_color_changed`` if the color changes."""
         if not color.isValid():
             return
-
         if color != self._color:
             self._color = color
             self.sig_color_changed.emit(self._color)
+        self._refresh()
 
-        if self._show_text:
-            self.setText(" " + self._color.name(self.text_fmt))
-        else:
-            self.setText("")
+    def _refresh(self) -> None:
+        self.setText(" " + self._color.name(self.text_fmt) if self._show_text else "")
 
         if self._show_icon:
             self.setStyleSheet("")
-            icon = QPixmap(self.iconSize())
-            icon.fill(self._color)
-            painter = QPainter(icon)
+            pixmap = QPixmap(self.iconSize())
+            pixmap.fill(self._color)
+            painter = QPainter(pixmap)
             pen = QPen(QColor("black"))
             pen.setWidth(1)
             painter.setPen(pen)
-            painter.drawRect(icon.rect().adjusted(0, 0, -1, -1))
+            painter.drawRect(pixmap.rect().adjusted(0, 0, -1, -1))
             painter.end()
-            self.setIcon(icon)
+            self.setIcon(pixmap)
         else:
             self.setIcon(QIcon())
             text_color = get_text_color(self._color)
@@ -106,17 +94,10 @@ class ColorPickerButton(QPushButton):
 
     @Slot()
     def _on_clicked(self) -> None:
-        """Launches a color selection dialog when the button is clicked.
-
-        Allows the user to choose a new color with optional alpha channel visibility based on configuration.
-        """
+        options = QColorDialog.ColorDialogOption(0)
         if self._show_alpha:
-            new_color = QColorDialog.getColor(
-                self._color, self, options=QColorDialog.ColorDialogOption.ShowAlphaChannel
-            )
-        else:
-            new_color = QColorDialog.getColor(self._color, self)
-        self.set_color(new_color)
+            options |= QColorDialog.ColorDialogOption.ShowAlphaChannel
+        self.set_color(QColorDialog.getColor(self._color, self, options=options))
 
     showAlphaChannel = Property(bool, get_show_alpha_channel, set_show_alpha_channel)
     showAsIcon = Property(bool, get_show_as_icon, set_show_as_icon)

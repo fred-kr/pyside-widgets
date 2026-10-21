@@ -14,12 +14,13 @@ NO_SELECTION_TEXT: Final = "<No Selection>"
 
 class EnumComboBox[T: Enum](QComboBox):
     """
-    QComboBox variant that uses the provided python Enum class to populate the combo box items.
+    QComboBox populated from a python Enum class.
 
     Inspired by [`superqt.QEnumComboBox`](https://pyapp-kit.github.io/superqt/widgets/qenumcombobox/#qenumcombobox).
     """
 
     sig_current_enum_changed = Signal(object)
+    """Emitted with the selected enum member, or None when nothing (or the "no selection" row) is selected."""
 
     def __init__(
         self,
@@ -29,88 +30,99 @@ class EnumComboBox[T: Enum](QComboBox):
     ) -> None:
         super().__init__(parent)
 
-        self._enum_class = enum_class
-        self._enum_model = QStandardItemModel(self)
+        self._enum_class: type[T] | None = None
         self._allow_none = allow_none
+        self._text_data: Callable[[T], str] | None = None
+        self._icon_data: Callable[[T], QIcon] | None = None
+        self._doc_data: Callable[[T], str] | None = None
 
+        self._enum_model = QStandardItemModel(self)
+        self.setModel(self._enum_model)
         self.setPlaceholderText(PLACEHOLDER_TEXT)
 
         self.set_enum_class(enum_class)
         self.currentIndexChanged.connect(self._on_current_index_changed)
 
     def allowNone(self) -> bool:
-        """Whether to allow the combo box to have no selection."""
+        """Whether the combo box offers a "no selection" row."""
         return self._allow_none
 
     def setAllowNone(self, allow_none: bool) -> None:
-        """Setter of property `allowNone`."""
+        """Setter of property `allowNone`. Rebuilds the items and keeps the current selection where possible."""
+        if allow_none == self._allow_none:
+            return
         self._allow_none = allow_none
+        current = self.current_enum()
+        self._rebuild_items()
+        if current is not None:
+            self.set_current_enum(current)
 
     def set_enum_class(
         self,
-        enum_class: type[Enum] | None,
-        text_data: Callable[[Enum], str] | None = None,
-        icon_data: Callable[[Enum], QIcon] | None = None,
-        doc_data: Callable[[Enum], str] | None = None,
+        enum_class: type[T] | None,
+        text_data: Callable[[T], str] | None = None,
+        icon_data: Callable[[T], QIcon] | None = None,
+        doc_data: Callable[[T], str] | None = None,
     ) -> None:
         """
-        Sets the enum class for the combo box and populates it with the enum members.
+        Set the enum class and populate the combo box with its members.
 
         Args:
-            enum_class: The enum class to be used in the combo box.
-            text_data: Optional callable to provide custom text for each enum member.
-                Defaults to None, using the enum member's name if not provided.
-            icon_data: Optional callable to provide custom icon for each enum member.
-                Defaults to None, using the default icon if not provided.
-            doc_data: Optional callable to provide custom documentation for each enum member.
-                Defaults to None, using the enum member's docstring if not provided.
+            enum_class: The enum class to show. None clears the combo box.
+            text_data: Returns the display text for a member. Defaults to the member name.
+            icon_data: Returns an icon for a member. Defaults to no icon.
+            doc_data: Returns the tooltip for a member. Defaults to no tooltip.
         """
-        self._enum_model.clear()
         self._enum_class = enum_class
-        if enum_class is None:
-            return
+        self._text_data = text_data
+        self._icon_data = icon_data
+        self._doc_data = doc_data
+        self._rebuild_items()
 
-        for enum_member in enum_class:
-            name = text_data(enum_member) if text_data is not None else enum_member.name
-            item = QStandardItem(name)
-            item.setData(enum_member, role=ItemDataRole.UserRole)
-            if icon_data is not None:
-                item.setIcon(icon_data(enum_member))
-            if doc_data is not None:
-                item.setToolTip(doc_data(enum_member))
-            self._enum_model.appendRow(item)
+    def _rebuild_items(self) -> None:
+        self._enum_model.clear()
+        if self._enum_class is None:
+            return
 
         if self._allow_none:
             none_item = QStandardItem(NO_SELECTION_TEXT)
             none_item.setData(None, role=ItemDataRole.UserRole)
-            self._enum_model.insertRow(0, none_item)
+            self._enum_model.appendRow(none_item)
 
-        self.setModel(self._enum_model)
+        for member in self._enum_class:
+            item = QStandardItem(self._text_data(member) if self._text_data is not None else member.name)
+            item.setData(member, role=ItemDataRole.UserRole)
+            if self._icon_data is not None:
+                item.setIcon(self._icon_data(member))
+            if self._doc_data is not None:
+                item.setToolTip(self._doc_data(member))
+            self._enum_model.appendRow(item)
+
+        # QComboBox does not auto-select the first row while placeholder text is set; select it explicitly so the
+        # combo box always has a current member (or the "no selection" row) once populated.
+        if self.currentIndex() < 0 and self.count() > 0:
+            self.setCurrentIndex(0)
 
     def current_enum(self) -> T | None:
-        """Returns the currently selected enum value.
-
-        If the data associated with the current item in the combo box is not a member of the enum class, returns None.
-
-        Returns:
-            The current enum value if it exists in the enum class, otherwise None.
-        """
+        """The selected enum member, or None if nothing or the "no selection" row is selected."""
         if self._enum_class is None:
-            return None
-        if self._allow_none and self.currentIndex() == 0:
             return None
         return self.currentData(role=ItemDataRole.UserRole)
 
     def set_current_enum(self, value: T | None) -> None:
-        """Sets the current combo box item to the provided enum member.
+        """
+        Select ``value``.
 
-        Args:
-            value (T): The enum member to be set as the current item.
+        Raises:
+            ValueError: If no enum class is set, or ``value`` is None while ``allowNone`` is False.
         """
         if self._enum_class is None:
             raise ValueError("Enum class not set")
-        if value is None and not self._allow_none:
-            raise ValueError("Cannot set None if allow_none is False")
+        if value is None:
+            if not self._allow_none:
+                raise ValueError("Cannot set None if allow_none is False")
+            self.setCurrentIndex(0)
+            return
         index = self.findData(value, role=ItemDataRole.UserRole)
         if index >= 0:
             self.setCurrentIndex(index)
@@ -119,4 +131,4 @@ class EnumComboBox[T: Enum](QComboBox):
     def _on_current_index_changed(self, index: int) -> None:
         self.sig_current_enum_changed.emit(self.current_enum())
 
-    allowNone = Property(bool, allowNone, setAllowNone)  # type: ignore
+    allowNone = Property(bool, allowNone, setAllowNone)  # type: ignore[assignment]
