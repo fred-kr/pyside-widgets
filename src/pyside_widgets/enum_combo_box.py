@@ -107,7 +107,14 @@ class EnumComboBox[T: Enum](QComboBox):
         """The selected enum member, or None if nothing or the "no selection" row is selected."""
         if self._enum_class is None:
             return None
-        return self.currentData(role=ItemDataRole.UserRole)
+        data = self.currentData(role=ItemDataRole.UserRole)
+        if data is None or isinstance(data, self._enum_class):
+            return data
+        # Qt stores a str or int subclass (StrEnum, IntEnum) as a plain QString / int; map it back to the member.
+        try:
+            return self._enum_class(data)
+        except ValueError:
+            return None
 
     def set_current_enum(self, value: T | None) -> None:
         """

@@ -81,3 +81,24 @@ def test_allow_none_property(combo: EnumComboBox[Color]):
     combo.setProperty("allowNone", True)
     assert combo.property("allowNone") is True
     assert combo.count() == 4
+
+
+class Separator(enum.StrEnum):
+    Tab = "\t"
+    Comma = ","
+
+
+class Level(enum.IntEnum):
+    Low = 1
+    High = 2
+
+
+@pytest.mark.parametrize(("enum_class", "member"), [(Separator, Separator.Comma), (Level, Level.High)])
+def test_str_and_int_enum_members_keep_their_type(qtbot, enum_class, member):
+    """Qt stores str/int subclasses as plain QString/int item data; the widget must hand back the member."""
+    widget = EnumComboBox(enum_class=enum_class)
+    qtbot.addWidget(widget)
+    with qtbot.waitSignal(widget.sig_current_enum_changed) as blocker:
+        widget.set_current_enum(member)
+    assert widget.current_enum() is member
+    assert blocker.args == [member]

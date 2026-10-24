@@ -1,6 +1,6 @@
 [project]
 name = "pyside-widgets"
-version = "0.4.0"
+version = "0.4.1"
 description = "A collection of custom PySide6 widgets along with plugins for Qt Designer."
 readme = "README.md"
 authors = [
@@ -27,11 +27,12 @@ hook-dirs = "pyside_widgets.__pyinstaller:get_hook_dirs"
 [dependency-groups]
 dev = [
     "numpy>=2.5.4",
-    "pyright>=1.1.400",
+    "pyright>=1.1.414",
     "pytest>=9.1.1",
     "pytest-qt>=4.5.0",
     "qtconsole>=5.7.2",
-    "ruff>=0.12.0",
+    "ruff>=0.17.1",
+    "scipy-stubs>=1.18.1.1",
 ]
 
 [build-system]
