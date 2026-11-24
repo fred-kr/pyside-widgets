@@ -1,10 +1,10 @@
 from typing import Any
 
 from PySide6.QtCore import Property, QSize, Qt, Signal, Slot
-from PySide6.QtGui import QColor, QIcon, QPainter, QPaintEvent, QPalette
+from PySide6.QtGui import QColor, QGuiApplication, QIcon, QPainter, QPaintEvent, QPalette
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
 
-from pyside_widgets._icons import get_icon
+from pyside_widgets._icons import get_icon, is_dark_palette
 from pyside_widgets._style_sheets import CARD_STYLE_SHEET
 from pyside_widgets._utils import NOTHING
 
@@ -27,6 +27,17 @@ class PlaceholderWidget(QFrame):
 
     def setPlaceholderText(self, text: str) -> None:
         self.label.setText(text)
+
+
+class _IconLabel(QWidget):
+    """Paints an icon on every repaint, so theme icons and scheme-aware icons follow a light/dark switch."""
+
+    def __init__(self, icon: QIcon, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.icon = icon
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        self.icon.paint(QPainter(self), self.rect())
 
 
 class SettingCard(QFrame):
@@ -71,7 +82,8 @@ class SettingCard(QFrame):
         self._description_label = QLabel(self.p_description, self)
         self._description_label.setObjectName("textLabel")  # targeted by CARD_STYLE_SHEET
         self._description_label.setForegroundRole(QPalette.ColorRole.PlaceholderText)
-        self._icon_label = QLabel(self)
+        self._icon_label = _IconLabel(self.p_icon, self)
+        self._icon_label.setFixedSize(self.p_icon_size)
 
         self.btn_reset = QPushButton(self)
         self.btn_reset.setFlat(True)
@@ -87,8 +99,6 @@ class SettingCard(QFrame):
 
         if self.p_icon.isNull():
             self._icon_label.hide()
-        else:
-            self._icon_label.setPixmap(self.p_icon.pixmap(self.p_icon_size))
 
         if not self.p_reset_button:
             self.btn_reset.hide()
@@ -125,6 +135,11 @@ class SettingCard(QFrame):
         self.h_layout.addSpacing(16)
 
         self.setStyleSheet(CARD_STYLE_SHEET)
+        # The style sheet pins the palette the card was polished with, and Qt sends a pinned widget no palette event.
+        # This signal (deprecated since Qt 6.0, still emitted in 6.12) is the only notification the card receives.
+        app = QGuiApplication.instance()
+        if isinstance(app, QGuiApplication):
+            app.paletteChanged.connect(self._adopt_application_palette)
 
     def get_title(self) -> str:
         return self.p_title
@@ -147,11 +162,9 @@ class SettingCard(QFrame):
 
     def set_icon(self, icon: QIcon) -> None:
         self.p_icon = icon
-        if icon.isNull():
-            self._icon_label.hide()
-            return
-        self._icon_label.setPixmap(icon.pixmap(self.p_icon_size))
-        self._icon_label.show()
+        self._icon_label.icon = icon
+        self._icon_label.setVisible(not icon.isNull())
+        self._icon_label.update()
 
     def get_reset_shown(self) -> bool:
         return self.p_reset_button
@@ -166,15 +179,17 @@ class SettingCard(QFrame):
     def set_icon_size(self, size: QSize) -> None:
         self.p_icon_size = size
         self._icon_label.setFixedSize(size)
-        if not self.p_icon.isNull():
-            self._icon_label.setPixmap(self.p_icon.pixmap(size))
+
+    @Slot()
+    def _adopt_application_palette(self) -> None:
+        """Re-polish so the card background, labels and icons follow a light/dark switch."""
+        self.setStyleSheet(self.styleSheet())
 
     def paintEvent(self, arg__1: QPaintEvent) -> None:
         painter = QPainter(self)
         painter.setRenderHints(QPainter.RenderHint.Antialiasing)
 
-        is_dark = self.palette().color(QPalette.ColorRole.Window).lightness() < 128
-        if is_dark:
+        if is_dark_palette(self.palette()):
             painter.setBrush(QColor(255, 255, 255, 13))
             painter.setPen(QColor(0, 0, 0, 50))
         else:
