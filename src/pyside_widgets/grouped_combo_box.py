@@ -1,18 +1,15 @@
-# QStyleOption members are initialized as needed (i think), meaning pyright can't infer their types, so we disable some
-# pyright checks for this file.
-
-# pyright: reportAttributeAccessIssue=false, reportUnknownArgumentType=false, reportUnknownVariableType=false
-
 import enum
-import typing as t
+from typing import Any, cast
 
-from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtCore import QEvent, QModelIndex, QObject, QPersistentModelIndex, QRect, QSize, Qt
+from PySide6.QtGui import QMouseEvent, QPainter, QPalette, QStandardItem, QStandardItemModel
+from PySide6.QtWidgets import QComboBox, QStyle, QStyledItemDelegate, QStyleOptionViewItem, QWidget
 
-ItemDataRole = QtCore.Qt.ItemDataRole
+ItemDataRole = Qt.ItemDataRole
 
 ItemTypeRole = ItemDataRole.UserRole + 1
 
-type ModelIndex = QtCore.QModelIndex | QtCore.QPersistentModelIndex
+type ModelIndex = QModelIndex | QPersistentModelIndex
 
 
 class ItemType(enum.Enum):
@@ -21,131 +18,118 @@ class ItemType(enum.Enum):
     CHILD = enum.auto()
 
 
-class GroupedComboBox(QtWidgets.QComboBox):
+class GroupedComboBox(QComboBox):
     """
-    A QComboBox variant that allows grouping of items under a header.
+    A QComboBox whose items are grouped under bold, non-selectable headers.
+
+    Headers and separators can never become the current item through the popup, the keyboard or the mouse wheel.
+    ``currentData()`` and the other ``QComboBox`` accessors behave as in the base class. Known limitation: a view set
+    with ``setView()`` loses the protection against clicks on headers.
     """
 
-    def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
-        self._model = QtGui.QStandardItemModel(self)
-        self._view = QtWidgets.QTreeView(self)
-        self._view.setHeaderHidden(True)
-        self._view.setRootIsDecorated(False)
-
+        self._model = QStandardItemModel(self)
         self.setModel(self._model)
-        self.setView(self._view)
         self.setItemDelegate(GroupedComboBoxDelegate(self))
+        # Installed after the popup's own filter, so it runs first.
+        self.view().viewport().installEventFilter(self)
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if (
+            isinstance(event, QMouseEvent)
+            and event.type() == QEvent.Type.MouseButtonRelease
+            and watched is self.view().viewport()
+        ):
+            # The popup selects the row that was last hovered, wherever the button is released. Over a header or a
+            # separator that would pick a neighbouring item, so the release is swallowed and the popup stays open.
+            index = self.view().indexAt(event.position().toPoint())
+            if index.isValid() and not (index.flags() & Qt.ItemFlag.ItemIsSelectable):
+                return True
+        return super().eventFilter(watched, event)
 
     def add_separator(self) -> None:
-        """
-        Add a separator item to the combo box.
-        """
-        item = QtGui.QStandardItem()
-        item.setFlags(QtCore.Qt.ItemFlag.NoItemFlags)
+        """Add a thin horizontal line."""
+        item = QStandardItem()
+        item.setFlags(Qt.ItemFlag.NoItemFlags)
         item.setData(ItemType.SEPARATOR, ItemTypeRole)
-        self._model.appendRow(item)
+        self._append(item)
 
     def add_parent_item(self, text: str) -> None:
         """
-        Add a parent item to the combo box.
+        Add a group header.
 
-        :param text: The text to be displayed for the parent item.
-        :type text: str
+        Args:
+            text: The header text, shown in bold.
         """
-        item = QtGui.QStandardItem(text)
-        flags = item.flags()
-        flags &= ~QtCore.Qt.ItemFlag.ItemIsSelectable
-        item.setFlags(flags)
+        item = QStandardItem(text)
+        # Not enabled, so that keyboard and wheel navigation in the closed combo box skip the header. The delegate
+        # still paints it with the enabled palette.
+        item.setFlags(Qt.ItemFlag.NoItemFlags)
         item.setData(ItemType.PARENT, ItemTypeRole)
 
         font = item.font()
         font.setBold(True)
         item.setFont(font)
 
-        self._model.appendRow(item)
+        self._append(item)
 
-    def add_child_item(self, text: str, data: t.Any | None = None) -> None:
+    def add_child_item(self, text: str, data: Any = None) -> None:
         """
-        Add a child item to the combo box.
+        Add a selectable item, indented below the most recent header.
 
-        :param text: The text to be displayed for the child item.
-        :type text: str
-        :param data: The data associated with the child item.
-        :type data: Any
+        Args:
+            text: The item text.
+            data: Returned by ``currentData()`` while the item is selected.
         """
-        item = QtGui.QStandardItem(text)
+        item = QStandardItem(text)
         item.setData(data, ItemDataRole.UserRole)
         item.setData(ItemType.CHILD, ItemTypeRole)
+        self._append(item)
 
+    def _append(self, item: QStandardItem) -> None:
         self._model.appendRow(item)
+        # QComboBox makes the first inserted row current, even a header. Move on to the first selectable row.
+        if not self._is_selectable(self.currentIndex()):
+            self.setCurrentIndex(next((row for row in range(self.count()) if self._is_selectable(row)), -1))
 
-    def currentData(self, role: int = ItemDataRole.UserRole) -> t.Any | None:
-        """
-        Returns the data associated with the currently selected item in the combo box.
-
-        :param role: The role for which to retrieve the data, defaults to ItemDataRole.UserRole
-        :type role: int, optional
-        :return: The data associated with the currently selected (child) item, or None if no item is selected or the
-            selected item is not a child item.
-        :rtype: Any | None
-        """
-        index = self.currentIndex()
-        if index >= 0:
-            item = self._model.item(index)
-            if item.data(ItemTypeRole) == ItemType.CHILD:
-                return item.data(ItemDataRole.UserRole)
-
-        return None
+    def _is_selectable(self, row: int) -> bool:
+        item = self._model.item(row) if row >= 0 else None
+        return item is not None and item.isSelectable()
 
 
-class GroupedComboBoxDelegate(QtWidgets.QStyledItemDelegate):
-    def sizeHint(
-        self,
-        option: QtWidgets.QStyleOptionViewItem,
-        index: ModelIndex,
-    ) -> QtCore.QSize:
+class GroupedComboBoxDelegate(QStyledItemDelegate):
+    """Paints separators as lines, headers on a tinted background and child items indented."""
+
+    _CHILD_INDENT = 20
+    _SEPARATOR_HEIGHT = 5
+
+    def sizeHint(self, option: QStyleOptionViewItem, index: ModelIndex) -> QSize:
+        if index.data(ItemTypeRole) == ItemType.SEPARATOR:
+            return QSize(0, self._SEPARATOR_HEIGHT)
+        return super().sizeHint(option, index)
+
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: ModelIndex) -> None:
         item_type = index.data(ItemTypeRole)
-        if item_type == ItemType.SEPARATOR:
-            return QtCore.QSize(0, 5)
-        else:
-            return super().sizeHint(option, index)
+        # The PySide6 stubs declare the fields of QStyleOption without a type, hence the casts.
+        rect = cast(QRect, option.rect)
+        palette = cast(QPalette, option.palette)
 
-    def paint(
-        self,
-        painter: QtGui.QPainter,
-        option: QtWidgets.QStyleOptionViewItem,
-        index: ModelIndex,
-    ) -> None:
-        item_type = index.data(ItemTypeRole)
         if item_type == ItemType.SEPARATOR:
-            y = (option.rect.top() + option.rect.bottom()) // 2
-            painter.setPen(option.palette.color(QtGui.QPalette.ColorGroup.Active, QtGui.QPalette.ColorRole.Dark))
-            painter.drawLine(option.rect.left(), y, option.rect.right(), y)
-        elif item_type == ItemType.PARENT:
+            y = rect.center().y()
             painter.save()
-            painter.fillRect(option.rect, option.palette.midlight())
-            option.font.setBold(True)
-            option.state &= ~QtWidgets.QStyle.StateFlag.State_Selected
-            super().paint(painter, option, index)
+            painter.setPen(palette.color(QPalette.ColorGroup.Active, QPalette.ColorRole.Dark))
+            painter.drawLine(rect.left(), y, rect.right(), y)
             painter.restore()
+            return
+
+        # Work on a copy: the view reuses the option it passes in for the next row.
+        own = QStyleOptionViewItem(option)
+        if item_type == ItemType.PARENT:
+            painter.fillRect(rect, palette.midlight())
+            state = cast(QStyle.StateFlag, own.state) | QStyle.StateFlag.State_Enabled
+            own.state = state & ~(QStyle.StateFlag.State_Selected | QStyle.StateFlag.State_MouseOver)
         elif item_type == ItemType.CHILD:
-            indent = 20  # Pixels to indent child items by
-            option.rect.adjust(indent, 0, 0, 0)
-            super().paint(painter, option, index)
-        else:
-            super().paint(painter, option, index)
-
-    def editorEvent(
-        self,
-        event: QtCore.QEvent,
-        model: QtCore.QAbstractItemModel,
-        option: QtWidgets.QStyleOptionViewItem,
-        index: ModelIndex,
-    ) -> bool:
-        item_type = index.data(ItemTypeRole)
-        if item_type != ItemType.CHILD:
-            return False  # Prevent selection of non-child items
-
-        return super().editorEvent(event, model, option, index)
+            own.rect = rect.adjusted(self._CHILD_INDENT, 0, 0, 0)
+        super().paint(painter, own, index)

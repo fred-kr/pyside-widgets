@@ -13,9 +13,9 @@ from pyside_widgets.data_tree_widget import DataTreeWidget, SearchableDataTreeWi
 from pyside_widgets.decimal_spin_box import DecimalSpinBox
 from pyside_widgets.enum_combo_box import EnumComboBox
 from pyside_widgets.grouped_combo_box import GroupedComboBox
-from pyside_widgets.labeled_slider import LabeledSlider
+from pyside_widgets.labeled_slider import LabeledSlider, ValueSlider
 from pyside_widgets.message_box import ResizableMessageBox
-from pyside_widgets.overlay_widget import OverlayWidget
+from pyside_widgets.overlay_widget import IndeterminateSpinner, OverlayWidget
 from pyside_widgets.setting_card_widget import SettingCard
 from pyside_widgets.toggle_switch import AnimatedToggleSwitch, ToggleSwitch
 
@@ -30,6 +30,7 @@ __all__ = [
     "DecimalSpinBox",
     "EnumComboBox",
     "GroupedComboBox",
+    "IndeterminateSpinner",
     "JupyterConsoleWidget",
     "JupyterConsoleWindow",
     "LabeledSlider",
@@ -38,6 +39,7 @@ __all__ = [
     "SearchableDataTreeWidget",
     "SettingCard",
     "ToggleSwitch",
+    "ValueSlider",
 ]
 
 _LAZY_ATTRIBUTES = {

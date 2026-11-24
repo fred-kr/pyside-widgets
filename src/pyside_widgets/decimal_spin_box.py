@@ -2,9 +2,9 @@ import decimal
 import re
 from collections.abc import Sequence
 
-from PySide6.QtCore import Property, Qt, Signal, Slot
+from PySide6.QtCore import Property, QSize, Qt, Signal, Slot
 from PySide6.QtGui import QValidator
-from PySide6.QtWidgets import QAbstractSpinBox, QWidget
+from PySide6.QtWidgets import QAbstractSpinBox, QStyle, QStyleOptionSpinBox, QWidget
 
 D = decimal.Decimal
 type _TSupportsDecimal = decimal.Decimal | float | str | tuple[int, Sequence[int], int]
@@ -23,7 +23,10 @@ class DecimalSpinBox(QAbstractSpinBox):
     Spin box that stores its value as ``decimal.Decimal``.
 
     Values are clamped to ``[minimum, maximum]`` and rounded to ``decimals`` places. Partial input while typing never
-    raises; the text is normalized when editing finishes.
+    raises; the text is normalized when editing finishes (Return or focus loss).
+
+    The method names mirror ``QDoubleSpinBox``. The setters take ``Decimal``, ``float`` or ``str`` and therefore carry
+    no ``@Slot`` decorator; connecting an ``int`` or ``float`` signal to them works as with any Python callable.
     """
 
     valueChanged = Signal(decimal.Decimal)
@@ -41,8 +44,10 @@ class DecimalSpinBox(QAbstractSpinBox):
 
         line_edit = self.lineEdit()
         line_edit.setAlignment(Qt.AlignmentFlag.AlignRight)
-        line_edit.editingFinished.connect(self._on_editing_finished)
         line_edit.textChanged.connect(self._on_text_changed)
+        # The spin box's own signal fires on Return and on focus loss whatever the text is. The line edit's signal of
+        # the same name is withheld while the validator reports Intermediate, e.g. for an out-of-range number.
+        self.editingFinished.connect(self._on_editing_finished)
         self.setKeyboardTracking(True)
         self._update_display()
 
@@ -56,28 +61,25 @@ class DecimalSpinBox(QAbstractSpinBox):
         self._decimal_places = max(0, prec)
         self._apply_constraints()
         self._update_display()
+        self.updateGeometry()
 
     def minimum(self) -> decimal.Decimal:
         return self._minimum
-
-    def f_minimum(self) -> float:
-        return float(self._minimum)
 
     def setMinimum(self, min: _TSupportsDecimal) -> None:
         self._minimum = _to_decimal(min)
         self._maximum = max(self._maximum, self._minimum)
         self._apply_constraints()
+        self.updateGeometry()
 
     def maximum(self) -> decimal.Decimal:
         return self._maximum
-
-    def f_maximum(self) -> float:
-        return float(self._maximum)
 
     def setMaximum(self, max: _TSupportsDecimal) -> None:
         self._maximum = _to_decimal(max)
         self._minimum = min(self._minimum, self._maximum)
         self._apply_constraints()
+        self.updateGeometry()
 
     def range(self) -> tuple[decimal.Decimal, decimal.Decimal]:
         return self._minimum, self._maximum
@@ -88,15 +90,22 @@ class DecimalSpinBox(QAbstractSpinBox):
             lo, hi = hi, lo
         self._minimum, self._maximum = lo, hi
         self._apply_constraints()
+        self.updateGeometry()
 
     def singleStep(self) -> decimal.Decimal:
         return self._single_step
 
-    def f_singleStep(self) -> float:
-        return float(self._single_step)
-
     def setSingleStep(self, val: _TSupportsDecimal) -> None:
-        self._single_step = _to_decimal(val)
+        """
+        Set the amount one arrow click or key press changes the value by.
+
+        Raises:
+            ValueError: If ``val`` is not greater than zero.
+        """
+        step = _to_decimal(val)
+        if step <= 0:
+            raise ValueError(f"singleStep must be greater than 0, got {step}")
+        self._single_step = step
 
     def prefix(self) -> str:
         return self._prefix
@@ -104,6 +113,7 @@ class DecimalSpinBox(QAbstractSpinBox):
     def setPrefix(self, prefix: str) -> None:
         self._prefix = prefix
         self._update_display()
+        self.updateGeometry()
 
     def suffix(self) -> str:
         return self._suffix
@@ -111,6 +121,7 @@ class DecimalSpinBox(QAbstractSpinBox):
     def setSuffix(self, suffix: str) -> None:
         self._suffix = suffix
         self._update_display()
+        self.updateGeometry()
 
     # Value
 
@@ -154,6 +165,32 @@ class DecimalSpinBox(QAbstractSpinBox):
         if self._value < self._maximum:
             flags |= QAbstractSpinBox.StepEnabledFlag.StepUpEnabled
         return flags
+
+    # Size
+
+    def sizeHint(self) -> QSize:
+        return self._hint_for(self.lineEdit().sizeHint().height())
+
+    def minimumSizeHint(self) -> QSize:
+        return self._hint_for(self.lineEdit().minimumSizeHint().height())
+
+    def _hint_for(self, height: int) -> QSize:
+        """
+        Size that fits the wider of the minimum and maximum texts, computed the way ``QDoubleSpinBox`` does it.
+
+        ``QAbstractSpinBox`` cannot do this itself: it does not know the range of a subclass and returns a hint just
+        wide enough for the arrow buttons.
+        """
+        self.ensurePolished()
+        metrics = self.fontMetrics()
+        affixes = f"{self._prefix}{self._suffix} "
+        width = max(
+            metrics.horizontalAdvance(self.textFromValue(bound) + affixes) for bound in (self._minimum, self._maximum)
+        )
+        option = QStyleOptionSpinBox()
+        self.initStyleOption(option)
+        contents = QSize(width + 2, height)  # 2 px for the text cursor
+        return self.style().sizeFromContents(QStyle.ContentsType.CT_SpinBox, option, contents, self)
 
     # Text
 
@@ -209,8 +246,34 @@ class DecimalSpinBox(QAbstractSpinBox):
             # Keep the user's text while typing; editingFinished normalizes it.
             self._set_value(parsed, update_display=False)
 
-    # Qt properties for Designer. Names differ from the Python accessors because a Property would shadow them.
+    def _minimum_as_float(self) -> float:
+        return float(self._minimum)
+
+    def _maximum_as_float(self) -> float:
+        return float(self._maximum)
+
+    def _single_step_as_float(self) -> float:
+        return float(self._single_step)
+
+    # Qt properties. The names differ from the accessors above because a Property occupies the class attribute of its
+    # own name: a property called "value" would replace the value() method that mirrors QDoubleSpinBox.
     decimalPlaces = Property(int, decimals, setDecimals)
-    minimumValue = Property(float, f_minimum, setMinimum)
-    maximumValue = Property(float, f_maximum, setMaximum)
-    stepSize = Property(float, f_singleStep, setSingleStep)
+    minimumValue = Property(float, _minimum_as_float, setMinimum)
+    maximumValue = Property(float, _maximum_as_float, setMaximum)
+    stepSize = Property(float, _single_step_as_float, setSingleStep)
+    # pyside6-uic writes a Designer property as a call to set<PropertyName>().
+    setDecimalPlaces = setDecimals
+    setMinimumValue = setMinimum
+    setMaximumValue = setMaximum
+    setStepSize = setSingleStep
+
+    # "QVariant" rather than object, so that Qt can hand over a float, int or str as well as a Decimal.
+    # PySide6 accepts the type name as a string; its stubs only declare `type`.
+    decimalValue = Property(
+        "QVariant",  # pyright: ignore[reportArgumentType]
+        value,
+        setValue,
+        notify=valueChanged,
+        user=True,
+        designable=False,
+    )

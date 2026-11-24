@@ -97,8 +97,10 @@ def test_setting_card_palette_follows_application_palette(qtbot, set_scheme):
     card.show()
 
     set_scheme(dark=True)
-    assert card.palette().color(QPalette.ColorRole.Window) == QColor(30, 30, 30)
+    # Qt posts the palette change to widgets; it arrives with the next pass of the event loop.
+    qtbot.waitUntil(lambda: card.palette().color(QPalette.ColorRole.Window) == QColor(30, 30, 30))
     assert card.btn_reset.palette().color(QPalette.ColorRole.Window) == QColor(30, 30, 30)
+    assert card._title_label.palette().color(QPalette.ColorRole.Window) == QColor(30, 30, 30)
 
 
 def _icon_only(label: QWidget) -> QImage:

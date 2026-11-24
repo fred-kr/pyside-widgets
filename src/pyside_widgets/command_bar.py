@@ -1,16 +1,21 @@
-from PySide6.QtCore import Property, QSize, Qt
-from PySide6.QtGui import QAction, QActionEvent, QResizeEvent
+from PySide6.QtCore import Property, QEvent, QSize, Qt, Slot
+from PySide6.QtGui import QAction, QActionEvent, QResizeEvent, QShowEvent
 from PySide6.QtWidgets import QToolBar, QWidget
 
 
 class CommandBar(QToolBar):
     """
     Non-movable toolbar with text under icons whose buttons either fill the width evenly or align to one side.
+
+    ``QToolBar`` gives every action button exactly its size hint (an ``Expanding`` size policy on the button has no
+    effect), so this class positions the buttons itself after each pass of the toolbar's own layout. Known limitation:
+    the toolbar's overflow menu still decides from the size hints which actions fit.
     """
 
     def __init__(
         self,
         parent: QWidget | None = None,
+        *,
         fill: bool = True,
         alignment: Qt.AlignmentFlag = Qt.AlignmentFlag.AlignLeft,
     ) -> None:
@@ -22,6 +27,7 @@ class CommandBar(QToolBar):
         self._fill = fill
         self._alignment = alignment
 
+    @Slot(bool)
     def set_fill(self, fill: bool) -> None:
         """When True, buttons are stretched to fill the toolbar. When False, they keep their size hint."""
         if fill != self._fill:
@@ -39,6 +45,18 @@ class CommandBar(QToolBar):
 
     def get_alignment(self) -> Qt.AlignmentFlag:
         return self._alignment
+
+    def event(self, event: QEvent) -> bool:
+        handled = super().event(event)
+        if event.type() == QEvent.Type.LayoutRequest:
+            # The toolbar layout has just put every button back at its size hint (after an action text, icon size or
+            # style change). Qt runs the layout before it delivers this event, so re-applying here comes last.
+            self._relayout()
+        return handled
+
+    def showEvent(self, event: QShowEvent) -> None:
+        super().showEvent(event)
+        self._relayout()
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         super().resizeEvent(event)
@@ -90,3 +108,7 @@ class CommandBar(QToolBar):
 
     fill = Property(bool, get_fill, set_fill)
     alignment = Property(Qt.AlignmentFlag, get_alignment, set_alignment)
+
+    # pyside6-uic writes a Designer property as a call to set<PropertyName>().
+    setFill = set_fill
+    setAlignment = set_alignment

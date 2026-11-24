@@ -10,21 +10,25 @@ from PySide6.QtCore import (
     Qt,
     Slot,
 )
-from PySide6.QtGui import QBrush, QColor, QPainter, QPaintEvent, QPen
-from PySide6.QtWidgets import QCheckBox, QSizePolicy, QWidget
+from PySide6.QtGui import QBrush, QColor, QPainter, QPaintEvent
+from PySide6.QtWidgets import QCheckBox, QSizePolicy, QStyle, QStyleOptionFocusRect, QWidget
 
-type ColorLike = Qt.GlobalColor | QColor | str
+from pyside_widgets._utils import ColorLike
+
+_DISABLED_OPACITY = 0.4
 
 
 class ToggleSwitch(QCheckBox):
-    """QCheckBox drawn as a sliding toggle switch."""
+    """
+    QCheckBox drawn as a sliding toggle switch.
 
-    _transparent_pen = QPen(Qt.GlobalColor.transparent)
-    _light_gray_pen = QPen(Qt.GlobalColor.lightGray)
+    Known limitation: the switch draws no label. ``setText()`` is accepted and ignored; put a ``QLabel`` next to it.
+    """
 
     def __init__(
         self,
         parent: QWidget | None = None,
+        *,
         bar_color: ColorLike = Qt.GlobalColor.gray,
         checked_color: ColorLike = "#00B0FF",
         handle_color: ColorLike = Qt.GlobalColor.white,
@@ -50,13 +54,9 @@ class ToggleSwitch(QCheckBox):
     def hitButton(self, pos: QPoint) -> bool:
         return self.contentsRect().contains(pos)
 
-    def paintEvent(self, arg__1: QPaintEvent) -> None:
+    def paintEvent(self, event: QPaintEvent) -> None:
         cont_rect = self.contentsRect()
         handle_radius = round(0.24 * cont_rect.height())
-
-        p = QPainter(self)
-        p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        p.setPen(self._transparent_pen)
 
         bar_rect = QRectF(0, 0, cont_rect.width() - handle_radius, 0.40 * cont_rect.height())
         bar_rect.moveCenter(cont_rect.center().toPointF())
@@ -66,20 +66,32 @@ class ToggleSwitch(QCheckBox):
         x_pos = cont_rect.x() + handle_radius + trail_length * self._handle_position
         handle_center = QPointF(x_pos, bar_rect.center().y())
 
-        self._paint_pulse(p, handle_center)
+        with QPainter(self) as painter:
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            painter.setPen(Qt.PenStyle.NoPen)
+            if not self.isEnabled():
+                painter.setOpacity(_DISABLED_OPACITY)
 
-        if self.isChecked():
-            p.setBrush(self._bar_checked_brush)
-            p.drawRoundedRect(bar_rect, rounding, rounding)
-            p.setBrush(self._handle_checked_brush)
-        else:
-            p.setBrush(self._bar_brush)
-            p.drawRoundedRect(bar_rect, rounding, rounding)
-            p.setPen(self._light_gray_pen)
-            p.setBrush(self._handle_brush)
+            self._paint_pulse(painter, handle_center)
 
-        p.drawEllipse(handle_center, handle_radius, handle_radius)
-        p.end()
+            if self.isChecked():
+                painter.setBrush(self._bar_checked_brush)
+                painter.drawRoundedRect(bar_rect, rounding, rounding)
+                painter.setBrush(self._handle_checked_brush)
+            else:
+                painter.setBrush(self._bar_brush)
+                painter.drawRoundedRect(bar_rect, rounding, rounding)
+                painter.setPen(Qt.GlobalColor.lightGray)
+                painter.setBrush(self._handle_brush)
+            painter.drawEllipse(handle_center, handle_radius, handle_radius)
+
+            if self.hasFocus():
+                # The style decides whether to draw it; most show the frame for keyboard focus only.
+                focus = QStyleOptionFocusRect()
+                focus.initFrom(self)
+                focus.rect = cont_rect
+                painter.setOpacity(1.0)
+                self.style().drawPrimitive(QStyle.PrimitiveElement.PE_FrameFocusRect, focus, painter, self)
 
     def _paint_pulse(self, painter: QPainter, center: QPointF) -> None:
         """Hook for subclasses to draw behind the handle. The plain switch draws nothing."""
@@ -90,6 +102,7 @@ class ToggleSwitch(QCheckBox):
         self.update()
 
     def get_handle_position(self) -> float:
+        """Position of the handle along the bar, from 0.0 (unchecked side) to 1.0 (checked side)."""
         return self._handle_position
 
     def set_handle_position(self, pos: float) -> None:
@@ -103,8 +116,9 @@ class ToggleSwitch(QCheckBox):
         self._pulse_radius = radius
         self.update()
 
-    handle_position = Property(float, get_handle_position, set_handle_position)
-    pulse_radius = Property(float, get_pulse_radius, set_pulse_radius)
+    # Animation targets, not settings.
+    handlePosition = Property(float, get_handle_position, set_handle_position, designable=False)
+    pulseRadius = Property(float, get_pulse_radius, set_pulse_radius, designable=False)
 
 
 class AnimatedToggleSwitch(ToggleSwitch):
@@ -113,22 +127,23 @@ class AnimatedToggleSwitch(ToggleSwitch):
     def __init__(
         self,
         parent: QWidget | None = None,
+        *,
         bar_color: ColorLike = Qt.GlobalColor.gray,
         checked_color: ColorLike = "#00B0FF",
         handle_color: ColorLike = Qt.GlobalColor.white,
         pulse_unchecked_color: ColorLike = "#44999999",
         pulse_checked_color: ColorLike = "#4400B0EE",
     ) -> None:
-        super().__init__(parent, bar_color, checked_color, handle_color)
+        super().__init__(parent, bar_color=bar_color, checked_color=checked_color, handle_color=handle_color)
 
         self._pulse_unchecked_brush = QBrush(QColor(pulse_unchecked_color))
         self._pulse_checked_brush = QBrush(QColor(pulse_checked_color))
 
-        self.animation = QPropertyAnimation(self, b"handle_position", self)
+        self.animation = QPropertyAnimation(self, b"handlePosition", self)
         self.animation.setEasingCurve(QEasingCurve.Type.InOutCubic)
         self.animation.setDuration(200)
 
-        self.pulse_anim = QPropertyAnimation(self, b"pulse_radius", self)
+        self.pulse_anim = QPropertyAnimation(self, b"pulseRadius", self)
         self.pulse_anim.setDuration(350)
         self.pulse_anim.setStartValue(10)
         self.pulse_anim.setEndValue(20)

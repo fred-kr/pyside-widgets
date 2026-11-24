@@ -1,5 +1,6 @@
 import pytest
-from PySide6 import QtCore, QtWidgets
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QLineEdit, QPlainTextEdit, QPushButton, QTableWidget
 
 from pyside_widgets.data_tree_widget import DataTreeWidget, SearchableDataTreeWidget
 
@@ -69,6 +70,28 @@ def test_data_tree_widget_filter(tree_widget, sample_data):
     assert root.child(2).isHidden()
 
 
+def test_filter_keeps_ancestors_and_subtree_of_a_match(tree_widget, sample_data):
+    tree_widget.set_data(sample_data, hide_root=True)
+    root = tree_widget.invisibleRootItem()
+    key3 = root.child(2)
+    nested1, nested2 = key3.child(0), key3.child(1)
+
+    tree_widget.filter_tree("nested2")
+    assert root.child(0).isHidden()
+    assert not key3.isHidden()  # ancestor of the match
+    assert nested1.isHidden()
+    assert not nested2.isHidden()
+    assert not nested2.child(0).isHidden()  # "a", below the match
+
+    tree_widget.filter_tree("")
+    assert not any(item.isHidden() for item in (root.child(0), root.child(1), key3, nested1, nested2))
+
+
+def test_context_menu_does_not_claim_the_context_menu_policy(tree_widget):
+    """The widget handles contextMenuEvent itself, so an application may still choose another policy."""
+    assert tree_widget.contextMenuPolicy() == Qt.ContextMenuPolicy.DefaultContextMenu
+
+
 def test_filter_before_set_data_and_after_clear(tree_widget, sample_data):
     tree_widget.filter_tree("x")  # must not raise
     tree_widget.set_data(sample_data)
@@ -84,7 +107,7 @@ def test_long_description_gets_full_text_editor(tree_widget):
     assert item.text(2).endswith("...")
     assert len(item.text(2)) == 100
     editor = tree_widget.itemWidget(item.child(0), 0)
-    assert isinstance(editor, QtWidgets.QPlainTextEdit)
+    assert isinstance(editor, QPlainTextEdit)
     assert editor.toPlainText() == long_text
 
 
@@ -104,7 +127,7 @@ def test_array_small_renders_table(tree_widget):
     assert item.text(1) == "ndarray"
     assert item.text(2) == "shape=(3, 4) dtype=int64"
     table = tree_widget.itemWidget(item.child(0), 0)
-    assert isinstance(table, QtWidgets.QTableWidget)
+    assert isinstance(table, QTableWidget)
     assert (table.rowCount(), table.columnCount()) == (3, 4)
     cell = table.item(2, 3)
     assert cell is not None and cell.text() == "11"
@@ -115,7 +138,7 @@ def test_array_large_renders_summary_button(tree_widget):
     tree_widget.set_data({"arr": numpy.arange(5000, dtype=float)})
     item = tree_widget.invisibleRootItem().child(0)
     button = tree_widget.itemWidget(item.child(0), 0)
-    assert isinstance(button, QtWidgets.QPushButton)
+    assert isinstance(button, QPushButton)
     assert button.text().startswith("Array summary: min=0.0, max=4999.0, mean=2499.50")
 
 
@@ -132,8 +155,8 @@ def test_array_1d_and_0d(tree_widget):
 
 
 def test_data_tree_widget_container_initialization(tree_widget_container):
-    assert isinstance(tree_widget_container.search_bar, QtWidgets.QLineEdit)
-    assert isinstance(tree_widget_container.btn_sort, QtWidgets.QPushButton)
+    assert isinstance(tree_widget_container.search_bar, QLineEdit)
+    assert isinstance(tree_widget_container.btn_sort, QPushButton)
     assert isinstance(tree_widget_container.data_tree, DataTreeWidget)
 
 
@@ -157,7 +180,7 @@ def test_data_tree_widget_container_filter(qtbot, tree_widget_container, sample_
 
 def test_data_tree_widget_container_sort(qtbot, tree_widget_container, sample_data):
     tree_widget_container.set_data(sample_data, hide_root=True)
-    qtbot.mouseClick(tree_widget_container.btn_sort, QtCore.Qt.MouseButton.LeftButton)
+    qtbot.mouseClick(tree_widget_container.btn_sort, Qt.MouseButton.LeftButton)
 
     root = tree_widget_container.data_tree.invisibleRootItem()
     assert root.child(0).text(0) == "key1"

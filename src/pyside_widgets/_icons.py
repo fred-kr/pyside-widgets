@@ -47,10 +47,9 @@ class _SchemeAwareIconEngine(QIconEngine):
             return self._source.pixmap(size, scale, mode, state)
 
         pixmap = self._source.pixmap(size, scale, QIcon.Mode.Normal, state)
-        painter = QPainter(pixmap)
-        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)  # keep alpha, replace color
-        painter.fillRect(pixmap.rect(), Qt.GlobalColor.white)
-        painter.end()
+        with QPainter(pixmap) as painter:
+            painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)  # keep alpha, replace color
+            painter.fillRect(pixmap.rect(), Qt.GlobalColor.white)
         if mode != QIcon.Mode.Normal:
             # Same disabled/selected rendering Qt's own icon engines apply.
             pixmap = QApplication.style().generatedIconPixmap(mode, pixmap, QStyleOption())

@@ -1,11 +1,25 @@
-"""Tabbed demo of every widget in the package. Run with ``uv run demo``."""
+"""Tabbed demo of every widget in the package. Run with ``uv run pyside-widgets-demo``."""
 
 import enum
 import sys
 import types
 from typing import Any
 
-from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QAction, QColor
+from PySide6.QtWidgets import (
+    QAbstractSpinBox,
+    QApplication,
+    QCheckBox,
+    QLabel,
+    QMainWindow,
+    QPushButton,
+    QSlider,
+    QTabWidget,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
 from pyside_widgets import (
     AnimatedToggleSwitch,
@@ -71,9 +85,9 @@ def _example_data() -> dict[str, Any]:
     return data
 
 
-def _vbox_tab(*widgets: QtWidgets.QWidget, stretch_last: bool = False) -> QtWidgets.QWidget:
-    container = QtWidgets.QWidget()
-    layout = QtWidgets.QVBoxLayout(container)
+def _vbox_tab(*widgets: QWidget, stretch_last: bool = False) -> QWidget:
+    container = QWidget()
+    layout = QVBoxLayout(container)
     for i, widget in enumerate(widgets):
         is_last = i == len(widgets) - 1
         layout.addWidget(widget, 1 if (stretch_last and is_last) else 0)
@@ -82,13 +96,11 @@ def _vbox_tab(*widgets: QtWidgets.QWidget, stretch_last: bool = False) -> QtWidg
     return container
 
 
-def main() -> None:
-    QtWidgets.QApplication.setStyle("Fusion")
-    app = QtWidgets.QApplication([])
-
-    window = QtWidgets.QMainWindow()
+def build_gallery(app: QApplication) -> QMainWindow:
+    """Build the gallery window without showing it."""
+    window = QMainWindow()
     window.setWindowTitle("Widget Gallery")
-    tabs = QtWidgets.QTabWidget()
+    tabs = QTabWidget()
 
     # GroupedComboBox
     grouped_combo_box = GroupedComboBox()
@@ -101,7 +113,6 @@ def main() -> None:
     grouped_combo_box.add_child_item("Item 4", EnumA.A.value)
     grouped_combo_box.add_child_item("Item 5", EnumA.B.value)
     grouped_combo_box.add_child_item("Item 6", EnumA.C.value)
-    grouped_combo_box.setCurrentIndex(1)
     grouped_combo_box.currentIndexChanged.connect(
         lambda: print(f"Selected item: {grouped_combo_box.currentText()}, item data: {grouped_combo_box.currentData()}")
     )
@@ -111,38 +122,40 @@ def main() -> None:
     try:
         from pyside_widgets import JupyterConsoleWindow
     except ImportError:
-        tabs.addTab(_vbox_tab(QtWidgets.QLabel("Install the 'jupyter' extra to see the console.")), "Jupyter")
+        tabs.addTab(_vbox_tab(QLabel("Install the 'jupyter' extra to see the console.")), "Jupyter")
     else:
         jupyter_console = JupyterConsoleWindow(style="lightbg", namespace={"app": app, "window": window})
         jupyter_console.console.execute("print('Hello from Jupyter Console!')", True)
         tabs.addTab(jupyter_console, "JupyterConsoleWindow")
 
     # OverlayWidget
-    base_widget = QtWidgets.QTextEdit("This is the base widget")
-    overlay_widget = OverlayWidget(parent=base_widget)
-    overlay_button = QtWidgets.QPushButton("Toggle Overlay")
-    overlay_button.clicked.connect(lambda: overlay_widget.toggle_overlay(not overlay_widget.isVisible()))
+    base_widget = QTextEdit("This is the base widget")
+    overlay_widget = OverlayWidget(base_widget)
+    overlay_widget.set_text("Running...")
+    overlay_button = QPushButton("Toggle Overlay")
+    overlay_button.clicked.connect(lambda: overlay_widget.setVisible(overlay_widget.isHidden()))
     tabs.addTab(_vbox_tab(overlay_button, base_widget, stretch_last=True), "OverlayWidget")
 
     # EnumComboBox
     enum_combo_box = EnumComboBox(enum_class=EnumA)
     enum_combo_box_2 = EnumComboBox(enum_class=SettingEnum, allow_none=True)
     enum_combo_box_2.sig_current_enum_changed.connect(lambda value: print(f"Selected enum: {value}"))
-    btn_toggle_none = QtWidgets.QPushButton("Toggle allowNone on second combo box")
-    btn_toggle_none.clicked.connect(lambda: enum_combo_box_2.setAllowNone(not enum_combo_box_2.allowNone))
+    btn_toggle_none = QPushButton("Toggle allowNone on second combo box")
+    btn_toggle_none.clicked.connect(lambda: enum_combo_box_2.set_allow_none(not enum_combo_box_2.get_allow_none()))
     tabs.addTab(_vbox_tab(btn_toggle_none, enum_combo_box, enum_combo_box_2), "EnumComboBox")
 
     # SettingCard
     setting_widget = EnumComboBox(enum_class=SettingEnum)
+    setting_widget.set_current_enum(SettingEnum.SETTING_B)
     setting_card = SettingCard(
         title="Example Setting",
         editor_widget=setting_widget,
-        default_value=SettingEnum.DEFAULT,
-        set_value_name="set_current_enum",
         description="This is a setting card with EnumComboBox as the editor widget",
         icon=get_icon("Settings"),
     )
-    tabs.addTab(_vbox_tab(setting_card), "SettingCard")
+    setting_card.sig_reset_clicked.connect(lambda: setting_widget.set_current_enum(SettingEnum.DEFAULT))
+    plain_card = SettingCard(title="Card without description or icon", editor_widget=ToggleSwitch())
+    tabs.addTab(_vbox_tab(setting_card, plain_card), "SettingCard")
 
     # DataTreeWidget / SearchableDataTreeWidget
     tabs.addTab(_vbox_tab(DataTreeWidget(data=_example_data()), stretch_last=True), "DataTreeWidget")
@@ -158,7 +171,7 @@ def main() -> None:
     decimal_spin_box.setSuffix(" mm")
     decimal_spin_box.setKeyboardTracking(False)
 
-    output = QtWidgets.QTextEdit()
+    output = QTextEdit()
     output.setReadOnly(True)
     decimal_spin_box.valueChanged.connect(lambda value: output.append(str(value)))
 
@@ -182,10 +195,10 @@ def main() -> None:
     decimals_input.setValue(2)
     decimals_input.valueChanged.connect(decimal_spin_box.setDecimals)
 
-    kbdtracking_input = QtWidgets.QCheckBox("Keyboard Tracking")
+    kbdtracking_input = QCheckBox("Keyboard Tracking")
     kbdtracking_input.toggled.connect(decimal_spin_box.setKeyboardTracking)
 
-    correction_method_input = EnumComboBox(enum_class=QtWidgets.QAbstractSpinBox.CorrectionMode)
+    correction_method_input = EnumComboBox(enum_class=QAbstractSpinBox.CorrectionMode)
     correction_method_input.sig_current_enum_changed.connect(decimal_spin_box.setCorrectionMode)
 
     tabs.addTab(
@@ -209,7 +222,7 @@ def main() -> None:
     labeled_slider_3 = LabeledSlider(title="Slider 3", title_pos=LabeledSlider.TitleLabelPosition.RIGHT)
     labeled_slider_3.setRange(0, 1000)
     labeled_slider_3.slider.setSingleStep(100)
-    labeled_slider_3.slider.setTickPosition(QtWidgets.QSlider.TickPosition.TicksBelow)
+    labeled_slider_3.slider.setTickPosition(QSlider.TickPosition.TicksBelow)
     tabs.addTab(_vbox_tab(labeled_slider_1, labeled_slider_2, labeled_slider_3), "LabeledSlider")
 
     # ColorPickerButton
@@ -218,49 +231,52 @@ def main() -> None:
     color_picker.sig_color_changed.connect(lambda color: print(f"Color 1: {color.name()}"))
 
     color_picker2 = ColorPickerButton(show_alpha=True, show_icon=False)
-    color_picker2.sig_color_changed.connect(
-        lambda color: print(f"Color 2: {color.name(QtGui.QColor.NameFormat.HexArgb)}")
-    )
+    color_picker2.sig_color_changed.connect(lambda color: print(f"Color 2: {color.name(QColor.NameFormat.HexArgb)}"))
 
-    btn_set_invalid_color = QtWidgets.QPushButton("Set Invalid Color (ignored)")
-    btn_set_invalid_color.clicked.connect(lambda: color_picker.set_color(QtGui.QColor("invalid_color")))
+    btn_set_invalid_color = QPushButton("Set Invalid Color (ignored)")
+    btn_set_invalid_color.clicked.connect(lambda: color_picker.set_color(QColor("invalid_color")))
     tabs.addTab(_vbox_tab(color_picker, color_picker2, btn_set_invalid_color), "ColorPickerButton")
 
     # ToggleSwitch / AnimatedToggleSwitch
     toggle = ToggleSwitch()
     animated_toggle = AnimatedToggleSwitch(checked_color="#1abc9c", pulse_checked_color="#4400B0EE")
-    tabs.addTab(_vbox_tab(toggle, animated_toggle), "Toggle / AnimatedToggle")
+    disabled_toggle = ToggleSwitch()
+    disabled_toggle.setChecked(True)
+    disabled_toggle.setEnabled(False)
+    tabs.addTab(_vbox_tab(toggle, animated_toggle, disabled_toggle), "Toggle / AnimatedToggle")
 
     # CommandBar
     command_bar = CommandBar()
-    action1 = QtGui.QAction(get_icon("MoreHorizontal"), "Action 1", command_bar)
-    action2 = QtGui.QAction(get_icon("Settings"), "Action 2", command_bar)
-    action3 = QtGui.QAction(get_icon("ArrowReset"), "Action 3", command_bar)
+    action1 = QAction(get_icon("MoreHorizontal"), "Action 1", command_bar)
+    action2 = QAction(get_icon("Settings"), "Action 2", command_bar)
+    action3 = QAction(get_icon("ArrowReset"), "Action 3", command_bar)
     for action in (action1, action2, action3):
         action.triggered.connect(lambda _=False, a=action: print(f"{a.text()} triggered"))
     command_bar.addActions([action1, action2])
     command_bar.addSeparator()
     command_bar.addAction(action3)
 
-    fill_toggle = QtWidgets.QCheckBox("Fill")
+    fill_toggle = QCheckBox("Fill")
     fill_toggle.setChecked(True)
     fill_toggle.toggled.connect(command_bar.set_fill)
-    align_right = QtWidgets.QCheckBox("Align right (when not filling)")
+    align_right = QCheckBox("Align right (when not filling)")
     align_right.toggled.connect(
         lambda checked: command_bar.set_alignment(
-            QtCore.Qt.AlignmentFlag.AlignRight if checked else QtCore.Qt.AlignmentFlag.AlignLeft
+            Qt.AlignmentFlag.AlignRight if checked else Qt.AlignmentFlag.AlignLeft
         )
     )
-    tabs.addTab(_vbox_tab(command_bar, fill_toggle, align_right), "CommandBar")
+    btn_rename = QPushButton("Rename Action 1 (forces a toolbar layout pass)")
+    btn_rename.clicked.connect(lambda: action1.setText(action1.text() + "!"))
+    tabs.addTab(_vbox_tab(command_bar, fill_toggle, align_right, btn_rename), "CommandBar")
 
     # ResizableMessageBox
-    btn_info = QtWidgets.QPushButton("Information")
+    btn_info = QPushButton("Information")
     btn_info.clicked.connect(lambda: ResizableMessageBox.information(window, "Information", "Everything is fine."))
-    btn_question = QtWidgets.QPushButton("Question")
+    btn_question = QPushButton("Question")
     btn_question.clicked.connect(
-        lambda: print("Answer:", ResizableMessageBox.question(window, "Question", "Continue?"))
+        lambda: print("Answer:", ResizableMessageBox.question(window, "Question", "Continue?").name)
     )
-    btn_exception = QtWidgets.QPushButton("Exception with traceback")
+    btn_exception = QPushButton("Exception with traceback")
     btn_exception.clicked.connect(
         lambda: ResizableMessageBox.from_exception(
             window, "Unhandled Exception", "An unexpected error occurred.", _make_exception()
@@ -270,6 +286,13 @@ def main() -> None:
 
     window.setCentralWidget(tabs)
     window.resize(1200, 800)
+    return window
+
+
+def main() -> None:
+    QApplication.setStyle("Fusion")
+    app = QApplication([])
+    window = build_gallery(app)
     window.show()
     app.exec()
 

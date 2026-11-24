@@ -1,6 +1,6 @@
 [project]
 name = "pyside-widgets"
-version = "0.4.1"
+version = "0.5.0"
 description = "A collection of custom PySide6 widgets along with plugins for Qt Designer."
 readme = "README.md"
 authors = [
@@ -17,8 +17,8 @@ jupyter = [
 ]
 
 [project.scripts]
-demo = "pyside_widgets.examples.widget_gallery:main"
-designer = "pyside_widgets.examples.designer:run"
+pyside-widgets-demo = "pyside_widgets.examples.widget_gallery:main"
+pyside-widgets-designer = "pyside_widgets.examples.designer:run"
 
 [project.entry-points.pyinstaller40]
 # Lets PyInstaller find the hook that bundles the SVG icons when an application using this package is frozen.
@@ -32,7 +32,6 @@ dev = [
     "pytest-qt>=4.5.0",
     "qtconsole>=5.7.2",
     "ruff>=0.17.1",
-    "scipy-stubs>=1.18.1.1",
 ]
 
 [build-system]

@@ -1,86 +1,98 @@
+from itertools import pairwise
+
 from PySide6.QtCore import (
     Property,
     QEvent,
     QObject,
     QParallelAnimationGroup,
     QPropertyAnimation,
+    QRect,
     QRectF,
     QSequentialAnimationGroup,
     Qt,
     Slot,
 )
-from PySide6.QtGui import QColor, QFont, QPainter, QPaintEvent, QPen
-from PySide6.QtWidgets import QApplication, QLabel, QProgressBar, QVBoxLayout, QWidget
+from PySide6.QtGui import QColor, QFont, QHideEvent, QPainter, QPaintEvent, QPen, QShowEvent
+from PySide6.QtWidgets import QWidget
 
-type ColorLike = Qt.GlobalColor | QColor | str
+from pyside_widgets._utils import ColorLike
 
 
-class IndeterminateSpinner(QProgressBar):
+class IndeterminateSpinner(QWidget):
     """
     Indeterminate ring spinner, based on `qfluentwidgets.IndeterminateProgressRing`.
+
+    The animation runs only while the spinner is visible, so a hidden spinner costs no timer wake-ups.
     """
 
-    def __init__(self, parent: QWidget | None = None, start: bool = True) -> None:
+    def __init__(self, parent: QWidget | None = None, *, start: bool = True) -> None:
+        """
+        Args:
+            parent: Parent widget.
+            start: Whether the spinner spins when it is shown. ``start()`` and ``stop()`` change this later.
+        """
         super().__init__(parent)
 
         self._bg_color = QColor(0, 0, 0, 0)
         self._bar_color = QColor()
         self._stroke_width = 6
+        self._start_angle = 0
+        self._span_angle = 0
+        self._spinning = start
 
-        self._startAngle = -180
-        self._spanAngle = 0
-
-        self.start_angle_ani1 = QPropertyAnimation(self, b"startAngle", self)
-        self.start_angle_ani2 = QPropertyAnimation(self, b"startAngle", self)
-        self.span_angle_ani1 = QPropertyAnimation(self, b"spanAngle", self)
-        self.span_angle_ani2 = QPropertyAnimation(self, b"spanAngle", self)
-
-        self.start_angle_ani_group = QSequentialAnimationGroup(self)
-        self.span_angle_ani_group = QSequentialAnimationGroup(self)
         self.ani_group = QParallelAnimationGroup(self)
-
-        self.start_angle_ani1.setDuration(1000)
-        self.start_angle_ani1.setStartValue(0)
-        self.start_angle_ani1.setEndValue(450)
-
-        self.start_angle_ani2.setDuration(1000)
-        self.start_angle_ani2.setStartValue(450)
-        self.start_angle_ani2.setEndValue(1080)
-
-        self.start_angle_ani_group.addAnimation(self.start_angle_ani1)
-        self.start_angle_ani_group.addAnimation(self.start_angle_ani2)
-
-        self.span_angle_ani1.setDuration(1000)
-        self.span_angle_ani1.setStartValue(0)
-        self.span_angle_ani1.setEndValue(180)
-
-        self.span_angle_ani2.setDuration(1000)
-        self.span_angle_ani2.setStartValue(180)
-        self.span_angle_ani2.setEndValue(0)
-
-        self.span_angle_ani_group.addAnimation(self.span_angle_ani1)
-        self.span_angle_ani_group.addAnimation(self.span_angle_ani2)
-
-        self.ani_group.addAnimation(self.start_angle_ani_group)
-        self.ani_group.addAnimation(self.span_angle_ani_group)
+        self.ani_group.addAnimation(self._sequence(b"startAngle", 0, 450, 1080))
+        self.ani_group.addAnimation(self._sequence(b"spanAngle", 0, 180, 0))
         self.ani_group.setLoopCount(-1)
 
         self.setFixedSize(80, 80)
 
-        if start:
-            self.start()
+    def _sequence(self, property_name: bytes, *values: int) -> QSequentialAnimationGroup:
+        """One-second animations of ``property_name`` through consecutive ``values``."""
+        group = QSequentialAnimationGroup(self)
+        for start, end in pairwise(values):
+            animation = QPropertyAnimation(self, property_name, self)
+            animation.setDuration(1000)
+            animation.setStartValue(start)
+            animation.setEndValue(end)
+            group.addAnimation(animation)
+        return group
 
+    @Slot()
     def start(self) -> None:
-        self._startAngle = 0
-        self._spanAngle = 0
+        """Spin whenever the spinner is visible."""
+        self._spinning = True
+        if self.isVisible():
+            self._run()
+
+    @Slot()
+    def stop(self) -> None:
+        """Stop spinning and clear the ring."""
+        self._spinning = False
+        self._halt()
+
+    def _run(self) -> None:
+        self._start_angle = 0
+        self._span_angle = 0
         self.ani_group.start()
 
-    def stop(self) -> None:
+    def _halt(self) -> None:
         self.ani_group.stop()
-        self._startAngle = 0
-        self._spanAngle = 0
+        self._start_angle = 0
+        self._span_angle = 0
+        self.update()
+
+    def showEvent(self, event: QShowEvent) -> None:
+        super().showEvent(event)
+        if self._spinning:
+            self._run()
+
+    def hideEvent(self, event: QHideEvent) -> None:
+        super().hideEvent(event)
+        self._halt()
 
     def set_bg_color(self, color: ColorLike) -> None:
+        """Set the color of the full ring behind the moving arc. Invalid colors are ignored."""
         bg_color = QColor(color)
         if not bg_color.isValid():
             return
@@ -88,28 +100,28 @@ class IndeterminateSpinner(QProgressBar):
         self.update()
 
     def set_bar_color(self, color: ColorLike) -> None:
+        """Set the color of the moving arc. Invalid colors are ignored."""
         bar_color = QColor(color)
         if not bar_color.isValid():
             return
         self._bar_color = bar_color
         self.update()
 
-    def paintEvent(self, arg__1: QPaintEvent) -> None:
-        painter = QPainter(self)
-        painter.setRenderHints(QPainter.RenderHint.Antialiasing)
+    def paintEvent(self, event: QPaintEvent) -> None:
+        stroke = self._stroke_width
+        diameter = min(self.height(), self.width()) - stroke
+        ring = QRectF(stroke / 2, self.height() / 2 - diameter / 2, diameter, diameter)
+        pen = QPen(self._bg_color, stroke, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin)
 
-        cw = self._stroke_width
-        w = min(self.height(), self.width()) - cw
-        rc = QRectF(cw / 2, self.height() / 2 - w / 2, w, w)
+        with QPainter(self) as painter:
+            painter.setRenderHints(QPainter.RenderHint.Antialiasing)
+            painter.setPen(pen)
+            painter.drawArc(ring, 0, 360 * 16)
 
-        pen = QPen(self._bg_color, cw, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin)
-        painter.setPen(pen)
-        painter.drawArc(rc, 0, 360 * 16)
-
-        pen.setColor(self._bar_color)
-        painter.setPen(pen)
-        start_angle = -self._startAngle + 180
-        painter.drawArc(rc, (start_angle % 360) * 16, -self._spanAngle * 16)
+            pen.setColor(self._bar_color)
+            painter.setPen(pen)
+            start_angle = -self._start_angle + 180
+            painter.drawArc(ring, (start_angle % 360) * 16, -self._span_angle * 16)
 
     def get_stroke_width(self) -> int:
         return self._stroke_width
@@ -119,78 +131,92 @@ class IndeterminateSpinner(QProgressBar):
         self.update()
 
     def get_start_angle(self) -> int:
-        return self._startAngle
+        return self._start_angle
 
     def set_start_angle(self, angle: int) -> None:
-        self._startAngle = angle
+        self._start_angle = angle
         self.update()
 
     def get_span_angle(self) -> int:
-        return self._spanAngle
+        return self._span_angle
 
     def set_span_angle(self, angle: int) -> None:
-        self._spanAngle = angle
+        self._span_angle = angle
         self.update()
 
-    stroke_width = Property(int, get_stroke_width, set_stroke_width)
-    startAngle = Property(int, get_start_angle, set_start_angle)
-    spanAngle = Property(int, get_span_angle, set_span_angle)
+    strokeWidth = Property(int, get_stroke_width, set_stroke_width)
+    # pyside6-uic writes a Designer property as a call to set<PropertyName>().
+    setStrokeWidth = set_stroke_width
+    # Animation targets of ani_group, not settings.
+    startAngle = Property(int, get_start_angle, set_start_angle, designable=False)
+    spanAngle = Property(int, get_span_angle, set_span_angle, designable=False)
 
 
 class OverlayWidget(QWidget):
     """
     Semi-transparent overlay with a spinner and a message that covers and disables its parent while shown.
 
-    The overlay follows the parent's size while visible.
+    ``show()``, ``setVisible(True)`` and ``show_overlay()`` are equivalent. Hiding the overlay gives the parent back
+    the enabled state it had when the overlay was shown. The overlay follows the parent's size while visible.
     """
+
+    _TEXT_SPACING = 12
 
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
-        self.hide()
         self._target = parent
-        self._target.installEventFilter(self)
-
+        self._target_was_enabled = True
+        self._covering = False
+        self._text = ""
         self._bg_color = QColor(0, 0, 0, 128)
         self._bar_color = QColor("cornflowerblue")
 
-        self._container = QWidget(self)
+        self._text_font = QFont(self.font())
+        self._text_font.setPointSize(28)
+        self._text_font.setWeight(QFont.Weight.DemiBold)
 
-        self._layout = QVBoxLayout(self._container)
-        self._layout.setContentsMargins(0, 0, 0, 0)
-        self._layout.setSpacing(0)
-
-        self._content = QWidget(self._container)
-        self._content.setStyleSheet("background: rgba(0, 0, 0, 0);")
-
-        self._layout_content = QVBoxLayout(self._content)
-        self._layout_content.setSpacing(12)
-
-        font = QApplication.font()
-        font.setPointSize(28)
-        font.setWeight(QFont.Weight.DemiBold)
-
-        self._text = QLabel(self._content)
-        self._text.setFont(font)
-        self._text.setStyleSheet("background: transparent; color: white;")
-        self._text.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        self._spinner = IndeterminateSpinner(self._content)
+        self._spinner = IndeterminateSpinner(self)
         self._spinner.set_bar_color(self._bar_color)
 
-        self._layout_content.addWidget(self._text, 0, Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
-        self._layout_content.addWidget(self._spinner, 0, Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
-        self._layout.addWidget(self._content, 0, Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
+        self.hide()
+        self._target.installEventFilter(self)
 
-        self.set_bg_color(self._bg_color)
+    def setVisible(self, visible: bool) -> None:
+        # Overridden rather than showEvent/hideEvent: those also fire when the parent window is shown or hidden, and
+        # they do not fire at all while the parent is not on screen yet.
+        if visible != self._covering:
+            self._covering = visible
+            if visible:
+                self._target_was_enabled = self._target.isEnabled()
+                self._target.setEnabled(False)
+                self._fit_to_target()
+                self.raise_()
+            else:
+                self._target.setEnabled(self._target_was_enabled)
+        super().setVisible(visible)
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        if watched is self._target and event.type() == QEvent.Type.Resize and self.isVisible():
+        if watched is self._target and event.type() == QEvent.Type.Resize and self._covering:
             self._fit_to_target()
         return super().eventFilter(watched, event)
 
     def _fit_to_target(self) -> None:
         self.setGeometry(self._target.rect())
-        self._container.setGeometry(self.rect())
+        spinner = self._spinner
+        spinner.move((self.width() - spinner.width()) // 2, (self.height() - spinner.height()) // 2)
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        with QPainter(self) as painter:
+            painter.fillRect(self.rect(), self._bg_color)
+            if not self._text:
+                return
+            # Drawn here instead of in a QLabel: the overlay is disabled together with its parent, and a disabled
+            # label is rendered greyed or etched depending on the style.
+            painter.setFont(self._text_font)
+            painter.setPen(Qt.GlobalColor.white)
+            above_spinner = QRect(0, 0, self.width(), max(0, self._spinner.y() - self._TEXT_SPACING))
+            flags = Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignBottom | Qt.TextFlag.TextWordWrap
+            painter.drawText(above_spinner, flags, self._text)
 
     def get_bg_color(self) -> QColor:
         return self._bg_color
@@ -198,14 +224,16 @@ class OverlayWidget(QWidget):
     def set_bg_color(self, color: ColorLike) -> None:
         """Set the (usually translucent) color drawn over the parent widget."""
         self._bg_color = QColor(color)
-        r, g, b, a = self._bg_color.red(), self._bg_color.green(), self._bg_color.blue(), self._bg_color.alpha()
-        self._container.setStyleSheet(f"background: rgba({r}, {g}, {b}, {a});")
+        self.update()
 
     def get_text(self) -> str:
-        return self._text.text()
+        return self._text
 
+    @Slot(str)
     def set_text(self, text: str) -> None:
-        self._text.setText(text)
+        """Set the message drawn above the spinner."""
+        self._text = text
+        self.update()
 
     def get_bar_color(self) -> QColor:
         return self._bar_color
@@ -217,25 +245,24 @@ class OverlayWidget(QWidget):
 
     def show_overlay(self, text: str | None = None) -> None:
         """Disable the parent widget, optionally update the message, and show the overlay on top of it."""
-        self._target.setEnabled(False)
         if text is not None:
-            self._text.setText(text)
-        self._fit_to_target()
-        self.raise_()
+            self.set_text(text)
         self.show()
 
+    @Slot()
     def hide_overlay(self) -> None:
-        """Hide the overlay and re-enable the parent widget."""
-        self._target.setEnabled(True)
+        """Hide the overlay and restore the parent's enabled state."""
         self.hide()
 
     @Slot(bool)
     def toggle_overlay(self, visible: bool) -> None:
-        if visible:
-            self.show_overlay()
-        else:
-            self.hide_overlay()
+        self.setVisible(visible)
 
     text = Property(str, get_text, set_text)
-    bg_color = Property(QColor, get_bg_color, set_bg_color)
-    bar_color = Property(QColor, get_bar_color, set_bar_color)
+    bgColor = Property(QColor, get_bg_color, set_bg_color)
+    barColor = Property(QColor, get_bar_color, set_bar_color)
+
+    # pyside6-uic writes a Designer property as a call to set<PropertyName>().
+    setText = set_text
+    setBgColor = set_bg_color
+    setBarColor = set_bar_color
